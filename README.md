@@ -25,10 +25,10 @@ Restituisce un array di richieste ordinate dalla più recente.
 - `page`: numero della pagina (default: `1`)
 - `limit`: risultati per pagina (default: `10`)
 
-> Se i parametri non sono specificati, vengono usati i valori di default.  
-> ⚠️ Non restituisce **tutte** le richieste se `limit` è assente.
+> ⚠️ Se i parametri non sono specificati, vengono usati i valori di default.  
+> Non restituisce **tutti** i record se `limit` è assente.
 
-**Risposta:**
+**Esempio di risposta:**
 ```json
 {
   "data": [ ... ],
@@ -45,7 +45,40 @@ Restituisce un array di richieste ordinate dalla più recente.
 
 ### ✅ `GET /api/request/:id`
 
-Restituisce i dettagli completi di una singola richiesta dato un `Id`.
+Restituisce i dettagli completi di una singola richiesta.
+
+**Esempio:**
+```http
+GET /api/request/AM25005488
+```
+
+**Esempio di risposta:**
+```json
+{
+  "Id": "AM25005488",
+  "DateTime": "2025-05-14T16:52:32.863Z",
+  "LicensePlate": "DK366PF",
+  "Km": 200000,
+  "Make": "Ford",
+  "Model": "Consul",
+  "RegistrationYear": 2007,
+  "EngineSize": 1500,
+  "FuelType": 45,
+  "TransmissionType": 10,
+  "CarCondition": 10,
+  "EngineCondition": 30,
+  "InteriorConditions": "dsadasdasd",
+  "ExteriorConditions": "asdasdasd",
+  "MechanicalConditions": "asdasdasd",
+  "Cap": "20811",
+  "City": "Cesano Maderno (MB)",
+  "FirstName": "Reda",
+  "LastName": "Charf",
+  "Email": "reda875@hotmail.it",
+  "Phone": "3281352136",
+  "DesiredPrice": 200
+}
+```
 
 ---
 
@@ -56,4 +89,4 @@ npm install
 npm run dev
 ```
 
-Assicurati che il file `.env` sia configurato con i parametri DB corretti.
+Assicurati che il file `.env` sia presente nella root e contenga le variabili per la connessione al database PostgreSQL.
