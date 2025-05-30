@@ -1,36 +1,44 @@
 import { Request, Response } from 'express';
-import { getRequestsPaged, getAllRequests, getRequestById } from '../services/request.service';
+import {
+  getRequestsPaged,
+  getRequestById,
+  getTotalRequestCount
+} from '../services/request.service';
 import { RequestRecord } from '../models/request.model';
 
 /**
- * Gestisce la rotta GET /api/requests
- * Restituisce una lista di richieste, paginata se specificati i parametri.
+ * Gestisce GET /api/requests
+ * Restituisce richieste in modo paginato. Applica valori di default se non forniti.
  */
 export async function getRequests(req: Request, res: Response) {
-  const pageQuery = req.query.page;
-  const limitQuery = req.query.limit;
+  const DEFAULT_PAGE = 1;
+  const DEFAULT_LIMIT = 10;
 
-  const page = pageQuery ? parseInt(pageQuery as string, 10) : 1;
-  const limit = limitQuery ? parseInt(limitQuery as string, 10) : null;
+  const page = parseInt(req.query.page as string) || DEFAULT_PAGE;
+  const limit = parseInt(req.query.limit as string) || DEFAULT_LIMIT;
 
-  const pageIsInvalid = pageQuery && isNaN(page);
-  const limitIsInvalid = limitQuery && limit !== null && isNaN(limit);
-
-  if (pageIsInvalid || limitIsInvalid) {
+  if (page <= 0 || limit <= 0) {
     res.status(400).json({ error: 'Parametri di paginazione non validi' });
     return;
   }
 
   try {
-    if (limit === null) {
-      // Nessun limite: restituisco tutte le richieste
-      const allRequests: RequestRecord[] = await getAllRequests();
-      res.status(200).json(allRequests);
-    } else {
-      // Paginazione: restituisco solo il blocco richiesto
-      const pagedRequests: RequestRecord[] = await getRequestsPaged(page, limit);
-      res.status(200).json(pagedRequests);
-    }
+    const [requests, total] = await Promise.all([
+      getRequestsPaged(page, limit),
+      getTotalRequestCount()
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    res.status(200).json({
+      data: requests,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages
+      }
+    });
   } catch (error) {
     console.error('Errore durante il recupero delle richieste:', error);
     res.status(500).json({ error: 'Errore interno del server' });
@@ -38,14 +46,14 @@ export async function getRequests(req: Request, res: Response) {
 }
 
 /**
- * Gestisce la rotta GET /api/request/:id
- * Restituisce i dettagli di una richiesta specifica per ID.
+ * Gestisce GET /api/request/:id
+ * Restituisce i dettagli di una singola richiesta.
  */
 export async function getRequest(req: Request, res: Response) {
-  const requestId = req.params.id;
+  const id = req.params.id;
 
   try {
-    const request = await getRequestById(requestId);
+    const request = await getRequestById(id);
 
     if (!request) {
       res.status(404).json({ error: 'Richiesta non trovata' });

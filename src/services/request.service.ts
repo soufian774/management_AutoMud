@@ -18,18 +18,6 @@ export async function getRequestsPaged(page: number, limit: number) {
   return result.rows;
 }
 
-/**
- * Restituisce tutte le richieste (senza paginazione).
- */
-export async function getAllRequests() {
-  const query = `
-    SELECT * FROM "Requests"
-    ORDER BY "DateTime" DESC
-  `;
-
-  const result = await pool.query(query);
-  return result.rows;
-}
 
 /**
  * Restituisce una singola richiesta tramite ID.
@@ -43,4 +31,13 @@ export async function getRequestById(id: string) {
 
   const result = await pool.query(query, [id]);
   return result.rows[0] || null;
+}
+
+/**
+ * Restituisce il numero totale di richieste nel database.
+ */
+export async function getTotalRequestCount(): Promise<number> {
+  const query = `SELECT COUNT(*) FROM "Requests"`;
+  const result = await pool.query(query);
+  return parseInt(result.rows[0].count, 10);
 }
