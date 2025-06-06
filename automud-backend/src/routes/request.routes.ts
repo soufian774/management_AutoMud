@@ -11,9 +11,12 @@
  * - PUT  /api/request/:id/pricing   → aggiornamento prezzi e costi
  * - PUT  /api/request/:id/range     → aggiornamento range valutazione
  * - PUT  /api/request/:id/vehicle   → aggiornamento info veicolo
+ * - POST /api/request/:id/offers    → aggiunta offerta
+ * - PUT  /api/request/:id/offers/:offerId  → modifica offerta
+ * - DELETE /api/request/:id/offers/:offerId → eliminazione offerta
  */
 
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { 
   getRequests, 
   getRequest, 
@@ -21,7 +24,10 @@ import {
   updateRequestNotes, 
   updateRequestPricing, 
   updateRequestRange, 
-  updateRequestVehicle 
+  updateRequestVehicle,
+  addRequestOffer,
+  updateRequestOffer,
+  deleteRequestOffer
 } from '../controllers/request.controller';
 import { getTotalRequestCount } from '../services/request.service';
 
@@ -33,7 +39,7 @@ requestRouter.get('/request', getRequests);
 
 // ✅ Numero totale richieste
 // Spostato prima del parametro /:id per evitare conflitti di routing
-requestRouter.get('/request/count', async (_req, res) => {
+requestRouter.get('/request/count', async (_req: Request, res: Response) => {
   try {
     const total = await getTotalRequestCount();
     res.json({ total });
@@ -60,5 +66,10 @@ requestRouter.put('/request/:id/range', updateRequestRange);
 
 // ✅ Aggiornamento informazioni veicolo richiesta
 requestRouter.put('/request/:id/vehicle', updateRequestVehicle);
+
+// ✅ Gestione offerte
+requestRouter.post('/request/:id/offers', addRequestOffer);
+requestRouter.put('/request/:id/offers/:offerId', updateRequestOffer);
+requestRouter.delete('/request/:id/offers/:offerId', deleteRequestOffer);
 
 export default requestRouter;

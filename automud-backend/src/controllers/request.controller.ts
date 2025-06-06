@@ -15,7 +15,10 @@ import {
   upsertManagement
 } from '../services/request-management.service';
 import {
-  getOffersByRequestId
+  getOffersByRequestId,
+  addOffer,
+  updateOffer,
+  deleteOffer
 } from '../services/request-offer.service';
 import { StatusChangeRequest } from '../models/request-status.model';
 import { RequestManagementRecord } from '../models/request-management.model';
@@ -600,6 +603,181 @@ export const changeRequestStatus: RequestHandler = async (req: Request, res: Res
 
   } catch (error) {
     console.error('❌ Errore nel cambio stato:', error);
+    res.status(500).json({ 
+      error: 'Errore interno del server',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+/**
+ * POST /api/request/:id/offers
+ * Aggiunge una nuova offerta per una richiesta.
+ */
+export const addRequestOffer: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const requestId = req.params.id;
+  const { offerDescription, offerPrice } = req.body;
+
+  if (!requestId || typeof requestId !== 'string') {
+    res.status(400).json({ error: 'ID richiesta non valido' });
+    return;
+  }
+
+  if (!offerDescription || typeof offerDescription !== 'string') {
+    res.status(400).json({ error: 'Descrizione offerta non valida' });
+    return;
+  }
+
+  if (typeof offerPrice !== 'number' || offerPrice < 0 || isNaN(offerPrice)) {
+    res.status(400).json({ error: 'Prezzo offerta non valido' });
+    return;
+  }
+
+  try {
+    console.log(`💰 Aggiunta offerta per richiesta ${requestId}:`, { offerDescription, offerPrice });
+
+    // Verifica che la richiesta esista
+    const existingRequest = await getRequestById(requestId);
+    if (!existingRequest) {
+      res.status(404).json({ error: 'Richiesta non trovata' });
+      return;
+    }
+
+    // Aggiungi l'offerta
+    const newOffer = await addOffer({
+      RequestId: requestId,
+      OfferDescription: offerDescription,
+      OfferPrice: offerPrice,
+      OfferDate: new Date().toISOString()
+    });
+
+    console.log(`✅ Offerta aggiunta con successo:`, newOffer);
+    res.status(201).json({
+      success: true,
+      offer: newOffer,
+      message: 'Offerta aggiunta con successo'
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nell\'aggiunta offerta:', error);
+    res.status(500).json({ 
+      error: 'Errore interno del server',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+/**
+ * PUT /api/request/:id/offers/:offerId
+ * Modifica un'offerta esistente.
+ */
+export const updateRequestOffer: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const requestId = req.params.id;
+  const offerId = parseInt(req.params.offerId);
+  const { offerDescription, offerPrice } = req.body;
+
+  if (!requestId || typeof requestId !== 'string') {
+    res.status(400).json({ error: 'ID richiesta non valido' });
+    return;
+  }
+
+  if (isNaN(offerId) || offerId <= 0) {
+    res.status(400).json({ error: 'ID offerta non valido' });
+    return;
+  }
+
+  // Validazione campi opzionali
+  if (offerDescription !== undefined && typeof offerDescription !== 'string') {
+    res.status(400).json({ error: 'Descrizione offerta non valida' });
+    return;
+  }
+
+  if (offerPrice !== undefined && (typeof offerPrice !== 'number' || offerPrice < 0 || isNaN(offerPrice))) {
+    res.status(400).json({ error: 'Prezzo offerta non valido' });
+    return;
+  }
+
+  try {
+    console.log(`✏️ Modifica offerta ${offerId} per richiesta ${requestId}:`, { offerDescription, offerPrice });
+
+    // Verifica che la richiesta esista
+    const existingRequest = await getRequestById(requestId);
+    if (!existingRequest) {
+      res.status(404).json({ error: 'Richiesta non trovata' });
+      return;
+    }
+
+    // Modifica l'offerta
+    const updatedOffer = await updateOffer(offerId, {
+      OfferDescription: offerDescription,
+      OfferPrice: offerPrice
+    });
+
+    if (!updatedOffer) {
+      res.status(404).json({ error: 'Offerta non trovata' });
+      return;
+    }
+
+    console.log(`✅ Offerta modificata con successo:`, updatedOffer);
+    res.status(200).json({
+      success: true,
+      offer: updatedOffer,
+      message: 'Offerta modificata con successo'
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nella modifica offerta:', error);
+    res.status(500).json({ 
+      error: 'Errore interno del server',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+}
+
+/**
+ * DELETE /api/request/:id/offers/:offerId
+ * Elimina un'offerta.
+ */
+export const deleteRequestOffer: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const requestId = req.params.id;
+  const offerId = parseInt(req.params.offerId);
+
+  if (!requestId || typeof requestId !== 'string') {
+    res.status(400).json({ error: 'ID richiesta non valido' });
+    return;
+  }
+
+  if (isNaN(offerId) || offerId <= 0) {
+    res.status(400).json({ error: 'ID offerta non valido' });
+    return;
+  }
+
+  try {
+    console.log(`🗑️ Eliminazione offerta ${offerId} per richiesta ${requestId}`);
+
+    // Verifica che la richiesta esista
+    const existingRequest = await getRequestById(requestId);
+    if (!existingRequest) {
+      res.status(404).json({ error: 'Richiesta non trovata' });
+      return;
+    }
+
+    // Elimina l'offerta
+    const deleted = await deleteOffer(offerId);
+
+    if (!deleted) {
+      res.status(404).json({ error: 'Offerta non trovata' });
+      return;
+    }
+
+    console.log(`✅ Offerta eliminata con successo`);
+    res.status(200).json({
+      success: true,
+      message: 'Offerta eliminata con successo'
+    });
+
+  } catch (error) {
+    console.error('❌ Errore nell\'eliminazione offerta:', error);
     res.status(500).json({ 
       error: 'Errore interno del server',
       details: error instanceof Error ? error.message : 'Unknown error'

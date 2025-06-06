@@ -2,14 +2,37 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Share, Loader2, Edit, TrendingUp, History, DollarSign, FileText, Users, Calendar, MapPin, Phone, Mail, X, ZoomIn, Clock, LogOut } from 'lucide-react'
-import { type CompleteRequestDetail, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor} from '@/lib/types'
+import { 
+  ArrowLeft, 
+  Share, 
+  Loader2, 
+  Edit, 
+  TrendingUp, 
+  History, 
+  DollarSign, 
+  FileText, 
+  Users, 
+  Calendar, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  X, 
+  ZoomIn, 
+  Clock, 
+  LogOut, 
+  Plus,
+  Camera // ✅ AGGIUNTO: Import mancante
+} from 'lucide-react'
+import { type CompleteRequestDetail, type RequestOffer, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor} from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
 import StatusSelector from '@/components/StatusSelector'
 import NotesEditor from '@/components/NotesEditor'
 import PricingEditor from '@/components/PricingEditor'
 import RangeEditor from '@/components/RangeEditor'
 import VehicleEditor from '@/components/VehicleEditor'
+import OffersEditor from '@/components/OffersEditor'
+import ShareModal from '@/components/ShareModal'
+import ImageManager from '@/components/ImageManager' // ✅ CORRETTO: Questo sarà disponibile dopo aver creato il file
 
 // ✅ NUOVO: Ora usa i parametri della rotta invece delle props
 export default function RequestDetail() {
@@ -39,6 +62,12 @@ export default function RequestDetail() {
 
   // Stati per la modifica veicolo
   const [isVehicleEditorOpen, setIsVehicleEditorOpen] = useState(false)
+
+  const [isOffersEditorOpen, setIsOffersEditorOpen] = useState(false)
+
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+
+  const [isImageManagerOpen, setIsImageManagerOpen] = useState(false)
 
   // ✅ NUOVO: Verifica autenticazione e parametri
   useEffect(() => {
@@ -126,6 +155,16 @@ export default function RequestDetail() {
     fetchRequest()
   }
 
+  // Handler per l'aggiornamento offerte
+  const handleOffersUpdated = (updatedOffers: RequestOffer[]) => {
+    console.log('✅ Offerte aggiornate:', updatedOffers)
+    
+    // Aggiorna le offerte localmente
+    setRequest(prev => prev ? {
+      ...prev,
+      Offers: updatedOffers
+    } : null)
+  } 
   // Handler per l'aggiornamento note
   const handleNotesUpdated = (newNotes: string) => {
     console.log('✅ Note aggiornate:', newNotes)
@@ -170,6 +209,17 @@ export default function RequestDetail() {
     
     // Aggiorna tutti i dati del veicolo localmente
     setRequest(updatedRequest)
+  }
+
+  // ✅ CORRETTO: Handler per l'aggiornamento immagini con tipo esplicito
+  const handleImagesUpdated = (updatedImages: string[]) => {
+    console.log('✅ Immagini aggiornate:', updatedImages)
+    
+    // Aggiorna le immagini localmente
+    setRequest(prev => prev ? {
+      ...prev,
+      Images: updatedImages
+    } : null)
   }
 
   // Gestione tasto ESC per chiudere modal e frecce per navigare
@@ -385,7 +435,10 @@ export default function RequestDetail() {
                 <Edit className="h-4 w-4 mr-2" />
                 Modifica
               </Button>
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white border-0">
+              <Button 
+                onClick={() => setIsShareModalOpen(true)}
+                className="bg-orange-500 hover:bg-orange-600 text-white border-0"
+              >
                 <Share className="h-4 w-4 mr-2" />
                 Condividi
               </Button>
@@ -523,10 +576,13 @@ export default function RequestDetail() {
                 }
               </div>
               
+              {/* ✅ CORRETTO: Pulsante per gestire immagini */}
               <Button 
+                onClick={() => setIsImageManagerOpen(true)}
                 variant="outline" 
                 className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
               >
+                <Camera className="h-4 w-4 mr-2" />
                 Gestisci Immagini
               </Button>
             </div>
@@ -784,12 +840,14 @@ export default function RequestDetail() {
                   )}
                 </div>
                 
-                <Button 
-                  variant="outline"
-                  className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
-                >
-                  Aggiungi Offerta
-                </Button>
+             <Button 
+              variant="outline"
+              onClick={() => setIsOffersEditorOpen(true)}
+              className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Gestisci Offerte
+            </Button>
               </div>
 
               {/* Storico Stati */}
@@ -1025,6 +1083,31 @@ export default function RequestDetail() {
         onClose={() => setIsVehicleEditorOpen(false)}
         request={request}
         onVehicleUpdated={handleVehicleUpdated}
+      />
+
+      {/* ✅ OffersEditor Modal */}
+      <OffersEditor
+      isOpen={isOffersEditorOpen}
+      onClose={() => setIsOffersEditorOpen(false)}
+      requestId={request.Id}
+      currentOffers={request.Offers}
+      onOffersUpdated={handleOffersUpdated}
+      />
+
+      {/* ✅ ShareModal */}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        request={request}
+      />
+
+      {/* ✅ CORRETTO: ImageManager Modal */}
+      <ImageManager
+        isOpen={isImageManagerOpen}
+        onClose={() => setIsImageManagerOpen(false)}
+        requestId={request.Id}
+        currentImages={request.Images}
+        onImagesUpdated={handleImagesUpdated}
       />
     </div>
   )

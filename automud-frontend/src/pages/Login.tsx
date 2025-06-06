@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import { testAuth } from '@/lib/api';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -32,24 +33,16 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const credentials = btoa(`${formData.username}:${formData.password}`);
-      
-      // ✅ AGGIORNATO: Usa la nuova rotta singolare /api/request/count
-      const response = await fetch('http://localhost:3000/api/request/count', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Basic ${credentials}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const success = await testAuth(formData.username, formData.password);
 
-      if (response.ok) {
+      if (success) {
+        // Salva credenziali per future richieste
+        const credentials = btoa(`${formData.username}:${formData.password}`);
         localStorage.setItem('automud_auth', credentials);
+        
         navigate("/dashboard");
-      } else if (response.status === 401) {
-        setError('Credenziali non valide. Riprova.');
       } else {
-        setError('Errore di connessione al server. Riprova più tardi.');
+        setError('Credenziali non valide. Riprova.');
       }
     } catch (err) {
       setError('Errore di connessione. Verifica la tua connessione internet.');
