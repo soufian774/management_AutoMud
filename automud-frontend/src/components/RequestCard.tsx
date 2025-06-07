@@ -23,7 +23,7 @@ export function RequestCard({ request, onView }: Props) {
       minute: '2-digit'
     });
 
-  // ✅ Funzioni per i colori corrette (adattate ai tuoi enum)
+  // Funzioni per i colori corrette (adattate ai tuoi enum)
   const getCarConditionColor = (code: number) => {
     switch (code) {
       case 30: return 'default';      // 'Usato' = Verde (migliore)
@@ -46,8 +46,8 @@ export function RequestCard({ request, onView }: Props) {
 
   return (
     <div className="rounded-lg overflow-hidden bg-slate-800/90 border border-slate-700/50 hover:border-orange-500/70 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 backdrop-blur-sm">
-      {/* Immagine principale - Aumentata l'altezza e migliorato l'aspect ratio */}
-      <div className="relative aspect-[4/3] bg-slate-700/50 overflow-hidden">
+      {/* Immagine principale - Responsive aspect ratio */}
+      <div className="relative aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/3] bg-slate-700/50 overflow-hidden">
         {mainImage ? (
           <img
             src={mainImage}
@@ -64,62 +64,62 @@ export function RequestCard({ request, onView }: Props) {
         
         {/* Fallback per immagine mancante */}
         <div className={`absolute inset-0 flex justify-center items-center bg-slate-700/50 ${mainImage ? 'hidden' : 'flex'}`}>
-          <Image className="text-slate-400 w-12 h-12" />
+          <Image className="text-slate-400 w-8 sm:w-12 h-8 sm:h-12" />
         </div>
 
-        {/* Overlay gradiente per migliorare la leggibilità dei badge */}
+        {/* Overlay gradiente */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/30" />
         
-        {/* Badge ID richiesta */}
-        <div className="absolute top-3 left-3">
-          <Badge variant="secondary" className="bg-orange-500/90 backdrop-blur-sm text-white border-0 font-semibold shadow-lg">
+        {/* Badge ID richiesta - Mobile friendly */}
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3">
+          <Badge variant="secondary" className="bg-orange-500/90 backdrop-blur-sm text-white border-0 font-semibold shadow-lg text-xs sm:text-sm">
             {request.Id}
           </Badge>
         </div>
         
-        {/* Badge numero immagini */}
+        {/* Badge numero immagini - Mobile friendly */}
         {request.Images.length > 0 && (
-          <div className="absolute top-3 right-3">
-            <Badge variant="outline" className="text-white bg-slate-900/80 border-slate-600/50 backdrop-blur-sm shadow-lg">
+          <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
+            <Badge variant="outline" className="text-white bg-slate-900/80 border-slate-600/50 backdrop-blur-sm shadow-lg text-xs">
               📷 {request.Images.length}
             </Badge>
           </div>
         )}
 
-        {/* Badge prezzo in evidenza */}
-        <div className="absolute bottom-3 right-3">
-          <Badge className="bg-green-500/90 backdrop-blur-sm text-white border-0 font-bold text-sm shadow-lg">
+        {/* Badge prezzo - Mobile responsive */}
+        <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3">
+          <Badge className="bg-green-500/90 backdrop-blur-sm text-white border-0 font-bold text-xs sm:text-sm shadow-lg">
             € {request.DesiredPrice.toLocaleString('it-IT')}
           </Badge>
         </div>
       </div>
 
-      {/* Contenuto card - Compattato per dare più spazio all'immagine */}
-      <div className="p-4 space-y-3">
-        {/* Titolo veicolo */}
+      {/* Contenuto card - Mobile optimized */}
+      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
+        {/* Titolo veicolo - Mobile responsive */}
         <div>
-          <h3 className="text-lg font-bold text-white leading-tight">
+          <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
             {request.Make} {request.Model}
           </h3>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Anno {request.RegistrationYear} • {request.Km.toLocaleString()} km
           </p>
         </div>
 
-        {/* Dettagli tecnici in riga */}
-        <div className="flex items-center gap-4 text-sm text-slate-300">
+        {/* Dettagli tecnici - Mobile stack vertically */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-300">
           <div className="flex items-center gap-1">
-            <Fuel className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <Fuel className="w-3 sm:w-4 h-3 sm:h-4 text-slate-400 flex-shrink-0" />
             <span className="truncate">{FuelTypeEnum[request.FuelType]}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Settings2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+            <Settings2 className="w-3 sm:w-4 h-3 sm:h-4 text-slate-400 flex-shrink-0" />
             <span className="truncate">{TransmissionTypeEnum[request.TransmissionType]}</span>
           </div>
         </div>
 
-        {/* Condizioni - ✅ Colori corretti */}
-        <div className="flex gap-2 flex-wrap">
+        {/* Condizioni - Mobile friendly badges */}
+        <div className="flex gap-1 sm:gap-2 flex-wrap">
           <Badge variant={getCarConditionColor(request.CarCondition)} className="text-xs">
             {CarConditionEnum[request.CarCondition]}
           </Badge>
@@ -128,10 +128,10 @@ export function RequestCard({ request, onView }: Props) {
           </Badge>
         </div>
 
-        {/* Informazioni di contesto */}
-        <div className="space-y-1 text-sm">
+        {/* Informazioni di contesto - Mobile compact */}
+        <div className="space-y-1 text-xs sm:text-sm">
           <div className="flex items-center gap-1 text-slate-400">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
+            <Calendar className="w-3 sm:w-4 h-3 sm:h-4 flex-shrink-0" />
             <span className="truncate">{formatDate(request.DateTime)}</span>
           </div>
           <p className="text-slate-400 truncate">📍 {request.City}</p>
@@ -140,12 +140,12 @@ export function RequestCard({ request, onView }: Props) {
           </p>
         </div>
 
-        {/* Bottone azione */}
+        {/* Bottone azione - Mobile full width */}
         <Button
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white border-0 font-semibold transition-colors duration-200"
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white border-0 font-semibold transition-colors duration-200 text-sm sm:text-base py-2 sm:py-2.5"
           onClick={() => onView(request)}
         >
-          <Eye className="w-4 h-4 mr-2" />
+          <Eye className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
           Visualizza Dettagli
         </Button>
       </div>

@@ -57,7 +57,7 @@ export default function ImageManager({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
   
-  // ✅ Hook per la conferma
+  // Hook per la conferma
   const { showConfirmation, ConfirmationComponent } = useConfirmation()
   
   // Stati principali
@@ -328,7 +328,7 @@ export default function ImageManager({
     }
   }
 
-  // ✅ OTTIMIZZATO: Elimina immagine con aggiornamento locale immediato
+  // Elimina immagine con aggiornamento locale immediato
   const handleDeleteImage = async (imageId: number, imageName: string) => {
     showConfirmation({
       title: 'Elimina Immagine',
@@ -382,7 +382,7 @@ export default function ImageManager({
     })
   }
 
-  // ✅ OTTIMIZZATO: Elimina tutte le immagini con aggiornamento locale
+  // Elimina tutte le immagini con aggiornamento locale
   const handleDeleteAllImages = async () => {
     if (images.length === 0) return
     
@@ -474,58 +474,58 @@ export default function ImageManager({
 
   return (
     <>
-      {/* Modal Principale */}
+      {/* Modal Principale - Mobile Responsive */}
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-6xl max-h-[95vh] overflow-y-auto">
+        <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-6xl max-h-[95vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-              <Camera className="h-5 w-5 text-blue-500" />
+            <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+              <Camera className="h-4 sm:h-5 w-4 sm:w-5 text-blue-500" />
               Gestione Immagini ({images.length})
               {stats.totalImages > 0 && (
-                <Badge className="bg-blue-600 text-white ml-2">
+                <Badge className="bg-blue-600 text-white ml-2 text-xs">
                   {stats.totalImages} foto
                 </Badge>
               )}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
-            {/* Info richiesta e statistiche */}
+          <div className="space-y-4 sm:space-y-6 py-4">
+            {/* Info richiesta e statistiche - Mobile Stack */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-700/30 p-4 rounded-lg border border-slate-600">
+              <div className="bg-slate-700/30 p-3 sm:p-4 rounded-lg border border-slate-600">
                 <div className="flex items-center gap-2 mb-2">
-                  <Info className="h-4 w-4 text-slate-400" />
-                  <span className="font-medium text-slate-200">Informazioni</span>
+                  <Info className="h-3 sm:h-4 w-3 sm:w-4 text-slate-400" />
+                  <span className="font-medium text-slate-200 text-sm">Informazioni</span>
                 </div>
-                <p className="text-sm text-slate-400">
+                <p className="text-xs sm:text-sm text-slate-400">
                   <span className="font-medium">Richiesta:</span> {requestId}
                 </p>
-                <p className="text-sm text-slate-400">
+                <p className="text-xs sm:text-sm text-slate-400">
                   <span className="font-medium">Limite:</span> 10MB per file, formati JPEG/PNG/GIF/WebP
                 </p>
               </div>
 
               {stats.totalImages > 0 && (
-                <div className="bg-green-900/20 p-4 rounded-lg border border-green-700/50">
+                <div className="bg-green-900/20 p-3 sm:p-4 rounded-lg border border-green-700/50">
                   <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-4 w-4 text-green-400" />
-                    <span className="font-medium text-green-400">Statistiche</span>
+                    <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />
+                    <span className="font-medium text-green-400 text-sm">Statistiche</span>
                   </div>
-                  <p className="text-sm text-green-200">
+                  <p className="text-xs sm:text-sm text-green-200">
                     <span className="font-medium">{stats.totalImages}</span> immagini caricate
                   </p>
-                  <p className="text-sm text-green-200">
+                  <p className="text-xs sm:text-sm text-green-200">
                     Storage: Azure Blob Container
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Upload Progress */}
+            {/* Upload Progress - Mobile Responsive */}
             {uploadProgress.length > 0 && (
-              <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
+              <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 sm:p-4">
+                <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <Zap className="h-3 sm:h-4 w-3 sm:w-4" />
                   Upload in Corso
                 </h3>
                 <div className="space-y-2">
@@ -533,13 +533,13 @@ export default function ImageManager({
                     <div key={index} className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm text-white truncate max-w-xs">
+                          <span className="text-xs sm:text-sm text-white truncate max-w-xs">
                             {progress.filename}
                           </span>
                           <div className="flex items-center gap-2">
-                            {progress.status === 'success' && <CheckCircle className="h-4 w-4 text-green-400" />}
-                            {progress.status === 'error' && <AlertTriangle className="h-4 w-4 text-red-400" />}
-                            {progress.status === 'uploading' && <Loader2 className="h-4 w-4 animate-spin text-blue-400" />}
+                            {progress.status === 'success' && <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />}
+                            {progress.status === 'error' && <AlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 text-red-400" />}
+                            {progress.status === 'uploading' && <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 animate-spin text-blue-400" />}
                             <span className="text-xs text-slate-400">{progress.progress}%</span>
                           </div>
                         </div>
@@ -562,28 +562,28 @@ export default function ImageManager({
               </div>
             )}
 
-            {/* Zona Upload */}
+            {/* Zona Upload - Mobile Responsive */}
             <div 
               ref={dropZoneRef}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
+              className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center transition-all duration-200 ${
                 isDragOver 
                   ? 'border-blue-500 bg-blue-500/10' 
                   : 'border-slate-600 hover:border-slate-500'
               } ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
             >
-              <div className="flex flex-col items-center gap-4">
+              <div className="flex flex-col items-center gap-3 sm:gap-4">
                 <div className="relative">
-                  <Upload className={`h-12 w-12 ${isDragOver ? 'text-blue-400' : 'text-slate-400'} transition-colors`} />
+                  <Upload className={`h-8 sm:h-12 w-8 sm:w-12 ${isDragOver ? 'text-blue-400' : 'text-slate-400'} transition-colors`} />
                   {isUploading && (
-                    <Loader2 className="h-6 w-6 animate-spin text-blue-500 absolute -top-1 -right-1" />
+                    <Loader2 className="h-4 sm:h-6 w-4 sm:w-6 animate-spin text-blue-500 absolute -top-1 -right-1" />
                   )}
                 </div>
                 
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
                     {isDragOver ? 'Rilascia qui le immagini' : 'Carica Nuove Immagini'}
                   </h3>
-                  <p className="text-slate-400 mb-4">
+                  <p className="text-slate-400 mb-4 text-sm">
                     Trascina le immagini qui o clicca per selezionare
                   </p>
                   
@@ -591,16 +591,16 @@ export default function ImageManager({
                     <Button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="bg-green-500 hover:bg-green-600 text-white border-0"
+                      className="bg-green-500 hover:bg-green-600 text-white border-0 text-sm sm:text-base"
                     >
                       {isUploading ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 mr-2 animate-spin" />
                           Caricamento...
                         </>
                       ) : (
                         <>
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
                           Seleziona File
                         </>
                       )}
@@ -610,9 +610,9 @@ export default function ImageManager({
                       onClick={fetchImages}
                       disabled={isLoading}
                       variant="outline"
-                      className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                      className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-sm sm:text-base"
                     >
-                      <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-3 sm:h-4 w-3 sm:w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                       Ricarica
                     </Button>
                   </div>
@@ -630,12 +630,12 @@ export default function ImageManager({
               />
             </div>
 
-            {/* Azioni di massa */}
+            {/* Azioni di massa - Mobile Responsive */}
             {images.length > 0 && (
-              <div className="flex justify-between items-center bg-slate-700/30 p-4 rounded-lg border border-slate-600">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-slate-700/30 p-3 sm:p-4 rounded-lg border border-slate-600">
                 <div className="flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">
+                  <ImageIcon className="h-3 sm:h-4 w-3 sm:w-4 text-slate-400" />
+                  <span className="text-xs sm:text-sm text-slate-400">
                     {images.length} immagini caricate
                   </span>
                 </div>
@@ -644,7 +644,7 @@ export default function ImageManager({
                   onClick={handleDeleteAllImages}
                   variant="destructive"
                   size="sm"
-                  className="bg-red-600 hover:bg-red-700"
+                  className="bg-red-600 hover:bg-red-700 text-xs sm:text-sm w-full sm:w-auto"
                 >
                   <Trash2 className="h-3 w-3 mr-1" />
                   Elimina Tutte
@@ -652,14 +652,14 @@ export default function ImageManager({
               </div>
             )}
 
-            {/* Griglia Immagini */}
+            {/* Griglia Immagini - Mobile Responsive */}
             {isLoading ? (
-              <div className="text-center py-16">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
-                <p className="text-slate-400">Caricamento immagini...</p>
+              <div className="text-center py-12 sm:py-16">
+                <Loader2 className="h-6 sm:h-8 w-6 sm:w-8 animate-spin mx-auto mb-4 text-blue-500" />
+                <p className="text-slate-400 text-sm">Caricamento immagini...</p>
               </div>
             ) : images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
                 {images.map((image, index) => (
                   <div key={image.id} className="bg-slate-700/50 border border-slate-600 rounded-lg overflow-hidden group hover:shadow-lg transition-all duration-200">
                     {/* Immagine */}
@@ -678,16 +678,16 @@ export default function ImageManager({
                       
                       {/* Fallback per errore caricamento */}
                       <div className="absolute inset-0 hidden items-center justify-center bg-slate-600">
-                        <ImageIcon className="h-8 w-8 text-slate-400" />
+                        <ImageIcon className="h-6 sm:h-8 w-6 sm:w-8 text-slate-400" />
                       </div>
 
-                      {/* Overlay azioni */}
+                      {/* Overlay azioni - Mobile Friendly */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                           <Button
                             size="sm"
                             onClick={() => openImageModal(index)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg"
+                            className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg p-1.5 sm:p-2"
                           >
                             <Eye className="h-3 w-3" />
                           </Button>
@@ -695,7 +695,7 @@ export default function ImageManager({
                             size="sm"
                             onClick={() => handleDeleteImage(image.id, image.name)}
                             variant="destructive"
-                            className="bg-red-600 hover:bg-red-700 shadow-lg"
+                            className="bg-red-600 hover:bg-red-700 shadow-lg p-1.5 sm:p-2"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -703,18 +703,18 @@ export default function ImageManager({
                       </div>
 
                       {/* Numero immagine */}
-                      <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-black/70 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                         {index + 1}
                       </div>
                     </div>
 
-                    {/* Info immagine */}
-                    <div className="p-3">
+                    {/* Info immagine - Mobile Compact */}
+                    <div className="p-2 sm:p-3">
                       <div className="flex items-center justify-between">
                         <Badge variant="outline" className="text-xs text-slate-300 border-slate-500">
                           ID: {image.id}
                         </Badge>
-                        <span className="text-xs text-slate-400 truncate max-w-20" title={image.name}>
+                        <span className="text-xs text-slate-400 truncate max-w-16 sm:max-w-20" title={image.name}>
                           {image.name.split('.')[0].substring(0, 8)}...
                         </span>
                       </div>
@@ -723,12 +723,12 @@ export default function ImageManager({
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16">
-                <FileImage className="h-20 w-20 text-slate-400 mx-auto mb-6" />
-                <h3 className="text-xl font-semibold text-white mb-3">
+              <div className="text-center py-12 sm:py-16">
+                <FileImage className="h-16 sm:h-20 w-16 sm:w-20 text-slate-400 mx-auto mb-4 sm:mb-6" />
+                <h3 className="text-lg sm:text-xl font-semibold text-white mb-2 sm:mb-3">
                   Nessuna immagine caricata
                 </h3>
-                <p className="text-slate-400 mb-6 max-w-md mx-auto">
+                <p className="text-slate-400 mb-4 sm:mb-6 max-w-md mx-auto text-sm sm:text-base px-4">
                   Questa richiesta non ha ancora immagini associate. Carica le prime foto per iniziare.
                 </p>
                 <Button
@@ -736,7 +736,7 @@ export default function ImageManager({
                   disabled={isUploading}
                   className="bg-green-500 hover:bg-green-600 text-white border-0"
                 >
-                  <Camera className="h-4 w-4 mr-2" />
+                  <Camera className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
                   Carica Prima Immagine
                 </Button>
               </div>
@@ -747,28 +747,28 @@ export default function ImageManager({
             <Button
               variant="outline"
               onClick={onClose}
-              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+              className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-sm sm:text-base"
             >
-              <X className="h-4 w-4 mr-2" />
+              <X className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
               Chiudi
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Modal Immagine Ingrandita - ✅ Z-INDEX PIÙ ALTO */}
+      {/* Modal Immagine Ingrandita - Mobile Responsive */}
       {isImageModalOpen && images.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-95">
           <div className="absolute inset-0" onClick={() => setIsImageModalOpen(false)}></div>
           
-          <div className="relative z-10 max-w-[95vw] max-h-[95vh] p-4">
-            {/* Pulsante chiudi */}
+          <div className="relative z-10 max-w-[95vw] max-h-[95vh] p-2 sm:p-4">
+            {/* Pulsante chiudi - Mobile Friendly */}
             <button
               onClick={() => setIsImageModalOpen(false)}
-              className="absolute -top-6 -right-6 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-3 rounded-full transition-all z-30 backdrop-blur-sm shadow-lg"
+              className="absolute -top-4 sm:-top-6 -right-4 sm:-right-6 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 sm:p-3 rounded-full transition-all z-30 backdrop-blur-sm shadow-lg"
               title="Chiudi (ESC)"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 sm:h-5 w-4 sm:w-5" />
             </button>
             
             <div className="relative group">
@@ -778,7 +778,7 @@ export default function ImageManager({
                 className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
               />
               
-              {/* Controlli navigazione */}
+              {/* Controlli navigazione - Mobile Optimized */}
               {images.length > 1 && (
                 <>
                   {/* Zone cliccabili invisibili per navigazione */}
@@ -798,34 +798,34 @@ export default function ImageManager({
                     title="Immagine successiva (→)"
                   />
 
-                  {/* Pulsanti navigazione visibili */}
+                  {/* Pulsanti navigazione visibili - Mobile Responsive */}
                   <button
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === 0 ? images.length - 1 : prev - 1
                     )}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
                     title="Immagine precedente (←)"
                   >
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="h-4 sm:h-5 w-4 sm:w-5" />
                   </button>
                   
                   <button
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === images.length - 1 ? 0 : prev + 1
                     )}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
                     title="Immagine successiva (→)"
                   >
-                    <ArrowRight className="h-5 w-5" />
+                    <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
                   </button>
                   
-                  {/* Indicatori numerici */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+                  {/* Indicatori numerici - Mobile Responsive */}
+                  <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
                     {images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`w-3 h-3 rounded-full transition-all ${
+                        className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full transition-all ${
                           index === selectedImageIndex
                             ? 'bg-white scale-110'
                             : 'bg-white bg-opacity-40 hover:bg-opacity-60'
@@ -838,9 +838,9 @@ export default function ImageManager({
               )}
             </div>
             
-            {/* Info immagine corrente */}
-            <div className="absolute bottom-6 left-6 bg-black bg-opacity-50 px-4 py-2 rounded-lg text-white text-center backdrop-blur-sm">
-              <div className="text-sm font-medium">
+            {/* Info immagine corrente - Mobile Responsive */}
+            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-white text-center backdrop-blur-sm">
+              <div className="text-xs sm:text-sm font-medium">
                 Immagine {selectedImageIndex + 1} di {images.length}
               </div>
               <div className="text-xs text-gray-300 mt-1">
@@ -848,34 +848,34 @@ export default function ImageManager({
               </div>
             </div>
             
-            {/* Istruzioni controlli */}
+            {/* Istruzioni controlli - Mobile Responsive */}
             {images.length > 1 && (
-              <div className="absolute top-6 left-6 bg-black bg-opacity-50 px-3 py-2 rounded-lg text-white text-xs backdrop-blur-sm">
+              <div className="absolute top-4 sm:top-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-white text-xs backdrop-blur-sm">
                 <div>← → per navigare</div>
                 <div>ESC per chiudere</div>
-                <div>Click sui lati per cambiare</div>
+                <div className="hidden sm:block">Click sui lati per cambiare</div>
               </div>
             )}
 
-            {/* Pulsante download */}
-            <div className="absolute top-6 right-6 bg-black bg-opacity-50 rounded-lg backdrop-blur-sm">
+            {/* Pulsante download - Mobile Responsive */}
+            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-black bg-opacity-50 rounded-lg backdrop-blur-sm">
               <a
                 href={images[selectedImageIndex]?.url}
                 download={images[selectedImageIndex]?.name}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-3 py-2 text-white hover:bg-white hover:bg-opacity-20 transition-colors rounded-lg"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 text-white hover:bg-white hover:bg-opacity-20 transition-colors rounded-lg"
                 title="Scarica immagine"
               >
-                <Download className="h-4 w-4" />
-                <span className="text-xs">Scarica</span>
+                <Download className="h-3 sm:h-4 w-3 sm:w-4" />
+                <span className="text-xs hidden sm:inline">Scarica</span>
               </a>
             </div>
           </div>
         </div>
       )}
 
-      {/* ✅ Componente di conferma elegante */}
+      {/* Componente di conferma elegante */}
       <ConfirmationComponent />
     </>
   )
