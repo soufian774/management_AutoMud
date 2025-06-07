@@ -4,17 +4,23 @@ import os from 'os';
 // Porta del server (di default 3000 se non specificata nel .env)
 const PORT = Number(process.env.PORT) || 3000;
 
-// ✅ Funzione per ottenere IP locali
+// ✅ Funzione per ottenere IP locali CON DEBUG
 function getLocalNetworkIPs() {
   const interfaces = os.networkInterfaces();
   const ips: string[] = [];
   
+  console.log('🔍 Scanning network interfaces...');
+  
   for (const interfaceName in interfaces) {
     const addresses = interfaces[interfaceName];
     if (addresses) {
+      console.log(`📡 Interface ${interfaceName}:`);
       for (const address of addresses) {
+        console.log(`   ${address.family} ${address.address} (internal: ${address.internal})`);
+        
         if (address.family === 'IPv4' && !address.internal) {
           ips.push(address.address);
+          console.log(`   ✅ Added to server IPs: ${address.address}`);
         }
       }
     }
@@ -24,6 +30,9 @@ function getLocalNetworkIPs() {
 }
 
 // ✅ Avvia server su tutte le interfacce per permettere connessioni di rete
+console.log('🚀 Starting AutoMud API Server...');
+console.log(`🎯 Attempting to bind on 0.0.0.0:${PORT}`);
+
 const server = app.listen(PORT, '0.0.0.0', () => {
   const localIPs = getLocalNetworkIPs();
   
@@ -31,25 +40,70 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=====================================');
   console.log(`📍 Porta: ${PORT}`);
   console.log(`🏠 Localhost: http://localhost:${PORT}`);
+  console.log(`🏠 127.0.0.1: http://127.0.0.1:${PORT}`);
   
   if (localIPs.length > 0) {
     console.log('📱 Rete locale:');
     localIPs.forEach(ip => {
       console.log(`   http://${ip}:${PORT}`);
     });
+    
+    // ✅ VERIFICA SPECIFICA per il tuo IP
+    const yourIP = '172.20.13.3';
+    if (localIPs.includes(yourIP)) {
+      console.log(`✅ FOUND YOUR IP: ${yourIP} - Frontend should work!`);
+    } else {
+      console.log(`❌ YOUR IP ${yourIP} NOT FOUND in detected IPs`);
+      console.log(`🔍 Available IPs: ${localIPs.join(', ')}`);
+    }
+  } else {
+    console.log('⚠️  Nessun IP di rete locale trovato');
+    console.log('💡 Possibili cause:');
+    console.log('   - Non connesso a rete WiFi/Ethernet');
+    console.log('   - Interfacce di rete disabilitate');
+    console.log('   - Problema configurazione di rete');
   }
   
   console.log(`🔗 Health check: /ping`);
   console.log('=====================================\n');
+  
+  // ✅ TEST AUTOMATICO della connettività
+  setTimeout(() => {
+    console.log('🧪 Running connectivity self-test...');
+    
+    // Test localhost
+    fetch(`http://localhost:${PORT}/ping`)
+      .then(res => res.json())
+      .then(data => console.log('✅ localhost test: OK'))
+      .catch(err => console.log('❌ localhost test: FAILED -', err.message));
+    
+    // Test specifico del tuo IP se disponibile
+    if (localIPs.includes('172.20.13.3')) {
+      fetch(`http://172.20.13.3:${PORT}/ping`)
+        .then(res => res.json())
+        .then(data => console.log('✅ 172.20.13.3 test: OK'))
+        .catch(err => console.log('❌ 172.20.13.3 test: FAILED -', err.message));
+    }
+  }, 1000);
 });
 
-// ✅ Gestione errori
+// ✅ Gestione errori CON DEBUG
 server.on('error', (error: any) => {
+  console.error('\n💥 SERVER ERROR:', error);
+  
   if (error.code === 'EADDRINUSE') {
     console.error(`❌ Errore: Porta ${PORT} già in uso`);
+    console.error('💡 Soluzioni:');
+    console.error('   1. Cambia porta: PORT=3001 npm run dev');
+    console.error('   2. Termina processo: killall node');
+    console.error('   3. Trova processo: lsof -i :3000');
+    process.exit(1);
+  } else if (error.code === 'EADDRNOTAVAIL') {
+    console.error(`❌ Errore: Indirizzo 0.0.0.0:${PORT} non disponibile`);
+    console.error('💡 Il sistema non supporta binding su 0.0.0.0');
     process.exit(1);
   } else {
-    console.error('❌ Errore server:', error);
+    console.error('❌ Errore server generico:', error);
     process.exit(1);
   }
 });
