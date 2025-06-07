@@ -47,15 +47,6 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     localIPs.forEach(ip => {
       console.log(`   http://${ip}:${PORT}`);
     });
-    
-    // ✅ VERIFICA SPECIFICA per il tuo IP
-    const yourIP = '172.20.13.3';
-    if (localIPs.includes(yourIP)) {
-      console.log(`✅ FOUND YOUR IP: ${yourIP} - Frontend should work!`);
-    } else {
-      console.log(`❌ YOUR IP ${yourIP} NOT FOUND in detected IPs`);
-      console.log(`🔍 Available IPs: ${localIPs.join(', ')}`);
-    }
   } else {
     console.log('⚠️  Nessun IP di rete locale trovato');
     console.log('💡 Possibili cause:');
@@ -63,28 +54,7 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     console.log('   - Interfacce di rete disabilitate');
     console.log('   - Problema configurazione di rete');
   }
-  
-  console.log(`🔗 Health check: /ping`);
-  console.log('=====================================\n');
-  
-  // ✅ TEST AUTOMATICO della connettività
-  setTimeout(() => {
-    console.log('🧪 Running connectivity self-test...');
-    
-    // Test localhost
-    fetch(`http://localhost:${PORT}/ping`)
-      .then(res => res.json())
-      .then(data => console.log('✅ localhost test: OK'))
-      .catch(err => console.log('❌ localhost test: FAILED -', err.message));
-    
-    // Test specifico del tuo IP se disponibile
-    if (localIPs.includes('172.20.13.3')) {
-      fetch(`http://172.20.13.3:${PORT}/ping`)
-        .then(res => res.json())
-        .then(data => console.log('✅ 172.20.13.3 test: OK'))
-        .catch(err => console.log('❌ 172.20.13.3 test: FAILED -', err.message));
-    }
-  }, 1000);
+
 });
 
 // ✅ Gestione errori CON DEBUG

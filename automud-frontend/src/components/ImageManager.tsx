@@ -177,19 +177,29 @@ export default function ImageManager({
     }
   }
 
-  // Validazione file
+  // 🔧 AGGIORNATO: Validazione file con limite 20MB
   const validateFiles = (files: File[]) => {
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    const maxSize = 20 * 1024 * 1024 // 🚨 CAMBIATO: 20MB invece di 10MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     
     const validFiles: File[] = []
     const errors: string[] = []
 
+    // 📏 Utility per formattare dimensioni file
+    const formatFileSize = (bytes: number): string => {
+      if (bytes === 0) return '0 Bytes'
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    }
+
     files.forEach(file => {
       if (!allowedTypes.includes(file.type)) {
         errors.push(`${file.name}: Formato non supportato. Usa JPEG, PNG, GIF o WebP.`)
       } else if (file.size > maxSize) {
-        errors.push(`${file.name}: File troppo grande. Massimo 10MB.`)
+        // 🚨 AGGIORNATO: Messaggio di errore con dimensione file e limite 20MB
+        errors.push(`${file.name}: File troppo grande (${formatFileSize(file.size)}). Massimo 20MB consentiti.`)
       } else {
         validFiles.push(file)
       }
@@ -501,7 +511,8 @@ export default function ImageManager({
                   <span className="font-medium">Richiesta:</span> {requestId}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  <span className="font-medium">Limite:</span> 10MB per file, formati JPEG/PNG/GIF/WebP
+                  {/* 🚨 AGGIORNATO: Testo con limite 20MB */}
+                  <span className="font-medium">Limite:</span> 20MB per file, formati JPEG/PNG/GIF/WebP
                 </p>
               </div>
 
@@ -585,6 +596,10 @@ export default function ImageManager({
                   </h3>
                   <p className="text-slate-400 mb-4 text-sm">
                     Trascina le immagini qui o clicca per selezionare
+                  </p>
+                  {/* 🚨 AGGIORNATO: Testo helper con 20MB */}
+                  <p className="text-xs text-slate-500 mb-4">
+                    Massimo 20MB per file • JPEG, PNG, GIF, WebP
                   </p>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
