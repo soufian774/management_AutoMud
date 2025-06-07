@@ -29,10 +29,9 @@ export default function PricingEditor({
   const [transportCost, setTransportCost] = useState(currentManagement?.TransportCost || 0)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset valori quando si apre il modal - usa sempre i valori più aggiornati
+  // Reset valori quando si apre il modal
   const handleOpen = (open: boolean) => {
     if (open) {
-      // Resetta sempre con i valori attuali dal props
       setPurchasePrice(currentManagement?.PurchasePrice || 0)
       setSalePrice(currentManagement?.SalePrice || 0)
       setRegistrationCost(currentManagement?.RegistrationCost || 0)
@@ -127,33 +126,34 @@ export default function PricingEditor({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpen}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-3xl">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-3xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-green-500" />
+          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <DollarSign className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" />
             Modifica Prezzi e Costi
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Info richiesta */}
+        <div className="space-y-4 sm:space-y-6 py-4">
+          {/* Info richiesta - Mobile Responsive */}
           <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-400 break-words">
               <span className="font-medium">Richiesta:</span> {requestId}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* PREZZI */}
+          {/* Layout Mobile-First */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {/* PREZZI - Mobile Stack */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-3">
-                <TrendingUp className="h-4 w-4 text-green-400" />
-                <h3 className="font-semibold text-green-400">Prezzi</h3>
+                <TrendingUp className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />
+                <h3 className="font-semibold text-green-400 text-sm sm:text-base">Prezzi</h3>
               </div>
 
               {/* Prezzo Acquisto */}
               <div className="space-y-2">
-                <Label htmlFor="purchasePrice" className="text-slate-200">
+                <Label htmlFor="purchasePrice" className="text-slate-200 text-sm sm:text-base">
                   Prezzo di Acquisto (€)
                 </Label>
                 <Input
@@ -164,13 +164,13 @@ export default function PricingEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-green-500 focus:ring-green-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-green-500 focus:ring-green-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
 
               {/* Prezzo Vendita */}
               <div className="space-y-2">
-                <Label htmlFor="salePrice" className="text-slate-200">
+                <Label htmlFor="salePrice" className="text-slate-200 text-sm sm:text-base">
                   Prezzo di Vendita (€)
                 </Label>
                 <Input
@@ -181,21 +181,21 @@ export default function PricingEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-green-500 focus:ring-green-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-green-500 focus:ring-green-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
             </div>
 
-            {/* COSTI */}
+            {/* COSTI - Mobile Stack */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-3">
-                <Calculator className="h-4 w-4 text-orange-400" />
-                <h3 className="font-semibold text-orange-400">Costi</h3>
+                <Calculator className="h-3 sm:h-4 w-3 sm:w-4 text-orange-400" />
+                <h3 className="font-semibold text-orange-400 text-sm sm:text-base">Costi</h3>
               </div>
 
               {/* Costi Pratica */}
               <div className="space-y-2">
-                <Label htmlFor="registrationCost" className="text-slate-200">
+                <Label htmlFor="registrationCost" className="text-slate-200 text-sm sm:text-base">
                   Costi di Pratica (€)
                 </Label>
                 <Input
@@ -206,13 +206,13 @@ export default function PricingEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
 
               {/* Costi Trasporto */}
               <div className="space-y-2">
-                <Label htmlFor="transportCost" className="text-slate-200">
+                <Label htmlFor="transportCost" className="text-slate-200 text-sm sm:text-base">
                   Costi di Trasporto (€)
                 </Label>
                 <Input
@@ -223,23 +223,23 @@ export default function PricingEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
             </div>
           </div>
 
-          {/* Calcolo Margine in tempo reale */}
-          <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-slate-200">Calcolo Margine</h4>
-                <p className="text-sm text-slate-400">
+          {/* Calcolo Margine - Mobile Responsive */}
+          <div className="bg-slate-700/50 p-3 sm:p-4 rounded-lg border border-slate-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <h4 className="font-semibold text-slate-200 text-sm sm:text-base">Calcolo Margine</h4>
+                <p className="text-xs sm:text-sm text-slate-400 break-words">
                   Vendita (€{Number(salePrice).toLocaleString()}) - Acquisto (€{Number(purchasePrice).toLocaleString()}) - Costi (€{totalCosts.toLocaleString()})
                 </p>
               </div>
-              <div className="text-right">
-                <div className={`text-2xl font-bold ${marginColor}`}>
+              <div className="text-left sm:text-right">
+                <div className={`text-xl sm:text-2xl font-bold ${marginColor}`}>
                   €{margin.toLocaleString()}
                 </div>
                 <p className="text-xs text-slate-400">
@@ -249,14 +249,37 @@ export default function PricingEditor({
             </div>
           </div>
 
-          {/* Anteprima cambiamenti */}
+          {/* Riepilogo Mobile - Solo su schermi piccoli */}
+          <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 sm:hidden">
+            <h4 className="font-semibold text-blue-400 text-sm mb-2">Riepilogo</h4>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-slate-400">Acquisto:</span>
+                <div className="font-medium text-white">€{Number(purchasePrice).toLocaleString()}</div>
+              </div>
+              <div>
+                <span className="text-slate-400">Vendita:</span>
+                <div className="font-medium text-white">€{Number(salePrice).toLocaleString()}</div>
+              </div>
+              <div>
+                <span className="text-slate-400">Pratica:</span>
+                <div className="font-medium text-white">€{Number(registrationCost).toLocaleString()}</div>
+              </div>
+              <div>
+                <span className="text-slate-400">Trasporto:</span>
+                <div className="font-medium text-white">€{Number(transportCost).toLocaleString()}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Anteprima cambiamenti - Mobile Responsive */}
           {hasChanges() && (
             <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
               <div className="flex items-start gap-2">
-                <DollarSign className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                <div>
+                <DollarSign className="h-3 sm:h-4 w-3 sm:w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-blue-400">Modifiche in sospeso</p>
-                  <p className="text-sm text-blue-200">
+                  <p className="text-sm text-blue-200 break-words">
                     I prezzi e costi sono stati modificati. Clicca "Salva" per confermare i cambiamenti.
                   </p>
                 </div>
@@ -265,12 +288,12 @@ export default function PricingEditor({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full sm:w-auto order-2 sm:order-1 touch-manipulation"
           >
             <X className="h-4 w-4 mr-2" />
             Annulla
@@ -278,7 +301,7 @@ export default function PricingEditor({
           <Button
             onClick={handleSave}
             disabled={!hasChanges() || isLoading}
-            className="bg-green-500 hover:bg-green-600 text-white border-0"
+            className="bg-green-500 hover:bg-green-600 text-white border-0 w-full sm:w-auto order-1 sm:order-2 touch-manipulation"
           >
             {isLoading ? (
               <>

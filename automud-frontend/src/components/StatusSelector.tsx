@@ -97,7 +97,6 @@ export default function StatusSelector({
 
     setIsLoading(true)
     try {
-      // Chiamata API reale
       const auth = localStorage.getItem('automud_auth')
       if (!auth) {
         throw new Error('Utente non autenticato')
@@ -111,7 +110,6 @@ export default function StatusSelector({
         Notes: notes || undefined
       }
 
-      // ✅ AGGIORNATO: Usa la nuova rotta singolare /api/request
       const response = await fetch(`${API_BASE_URL}/api/request/${requestId}/status`, {
         method: 'PUT',
         headers: {
@@ -136,7 +134,6 @@ export default function StatusSelector({
       handleClose()
     } catch (error) {
       console.error('❌ Errore nel cambio stato:', error)
-      // TODO: Mostrare errore all'utente (toast, alert, etc.)
       alert(error instanceof Error ? error.message : 'Errore sconosciuto')
     } finally {
       setIsLoading(false)
@@ -159,33 +156,33 @@ export default function StatusSelector({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <Clock className="h-5 w-5 text-orange-500" />
+          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <Clock className="h-4 sm:h-5 w-4 sm:w-5 text-orange-500" />
             Cambia Stato Richiesta
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Stato attuale */}
-          <div className="flex items-center gap-4 p-4 bg-slate-700/50 rounded-lg">
-            <div>
+        <div className="space-y-4 sm:space-y-6 py-4">
+          {/* Stato attuale - Mobile Responsive */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-slate-700/50 rounded-lg">
+            <div className="flex-1">
               <Label className="text-sm text-slate-400">Stato attuale:</Label>
-              <Badge className={`ml-2 ${getBadgeStyles(getStatusColor(currentStatus))}`}>
+              <Badge className={`ml-2 text-xs sm:text-sm ${getBadgeStyles(getStatusColor(currentStatus))}`}>
                 {RequestStatusEnum[currentStatus]}
               </Badge>
             </div>
           </div>
 
-          {/* Selezione nuovo stato */}
+          {/* Selezione nuovo stato - Mobile Responsive */}
           <div className="space-y-2">
-            <Label htmlFor="status">Nuovo Stato *</Label>
+            <Label htmlFor="status" className="text-sm sm:text-base">Nuovo Stato *</Label>
             <Select 
               value={selectedStatus.toString()} 
               onValueChange={(value) => handleStatusChange(parseInt(value))}
             >
-              <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+              <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-11 sm:h-10 text-sm sm:text-base">
                 <SelectValue placeholder="Seleziona nuovo stato..." />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
@@ -193,7 +190,7 @@ export default function StatusSelector({
                   <SelectItem 
                     key={key} 
                     value={key.toString()}
-                    className="text-white hover:bg-slate-600"
+                    className="text-white hover:bg-slate-600 py-3 sm:py-2"
                   >
                     <div className="flex items-center gap-2">
                       <Badge className={`text-xs ${getBadgeStyles(getStatusColor(key))}`}>
@@ -206,18 +203,18 @@ export default function StatusSelector({
             </Select>
           </div>
 
-          {/* Selezione esito finale (solo se stato = Esito finale) */}
+          {/* Selezione esito finale - Mobile Responsive */}
           {requiresFinalOutcome() && (
-            <div className="space-y-2 p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
-              <Label htmlFor="outcome" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-blue-400" />
+            <div className="space-y-2 p-3 sm:p-4 bg-blue-900/20 border border-blue-700/50 rounded-lg">
+              <Label htmlFor="outcome" className="flex items-center gap-2 text-sm sm:text-base">
+                <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-blue-400" />
                 Esito Finale *
               </Label>
               <Select 
                 value={selectedOutcome.toString()} 
                 onValueChange={(value) => handleOutcomeChange(parseInt(value))}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-11 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Seleziona esito finale..." />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -227,7 +224,7 @@ export default function StatusSelector({
                       <SelectItem 
                         key={key} 
                         value={key}
-                        className="text-white hover:bg-slate-600"
+                        className="text-white hover:bg-slate-600 py-3 sm:py-2 text-sm sm:text-base"
                       >
                         {value}
                       </SelectItem>
@@ -237,18 +234,18 @@ export default function StatusSelector({
             </div>
           )}
 
-          {/* Selezione motivazione (solo se esito = Non acquistata) */}
+          {/* Selezione motivazione - Mobile Responsive */}
           {requiresCloseReason() && (
-            <div className="space-y-4 p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
-              <Label htmlFor="reason" className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-400" />
+            <div className="space-y-3 sm:space-y-4 p-3 sm:p-4 bg-red-900/20 border border-red-700/50 rounded-lg">
+              <Label htmlFor="reason" className="flex items-center gap-2 text-sm sm:text-base">
+                <AlertCircle className="h-3 sm:h-4 w-3 sm:w-4 text-red-400" />
                 Motivazione Non Acquistata *
               </Label>
               <Select 
                 value={selectedReason.toString()} 
                 onValueChange={(value) => setSelectedReason(parseInt(value))}
               >
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-11 sm:h-10 text-sm sm:text-base">
                   <SelectValue placeholder="Seleziona motivazione..." />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -258,7 +255,7 @@ export default function StatusSelector({
                       <SelectItem 
                         key={key} 
                         value={key}
-                        className="text-white hover:bg-slate-600"
+                        className="text-white hover:bg-slate-600 py-3 sm:py-2 text-sm sm:text-base"
                       >
                         {value}
                       </SelectItem>
@@ -266,14 +263,14 @@ export default function StatusSelector({
                 </SelectContent>
               </Select>
 
-              {/* Mostra azione automatica se presente */}
+              {/* Azione automatica - Mobile Responsive */}
               {getAutomaticAction() && (
                 <div className="mt-3 p-3 bg-orange-900/30 border border-orange-700/50 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <Mail className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-orange-400">Azione Automatica</p>
-                      <p className="text-sm text-orange-200">{getAutomaticAction()}</p>
+                    <Mail className="h-3 sm:h-4 w-3 sm:w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs sm:text-sm font-medium text-orange-400">Azione Automatica</p>
+                      <p className="text-xs sm:text-sm text-orange-200 break-words">{getAutomaticAction()}</p>
                     </div>
                   </div>
                 </div>
@@ -281,10 +278,10 @@ export default function StatusSelector({
             </div>
           )}
 
-          {/* Note opzionali */}
+          {/* Note opzionali - Mobile Responsive */}
           <div className="space-y-2">
-            <Label htmlFor="notes" className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-slate-400" />
+            <Label htmlFor="notes" className="flex items-center gap-2 text-sm sm:text-base">
+              <FileText className="h-3 sm:h-4 w-3 sm:w-4 text-slate-400" />
               Note aggiuntive (opzionale)
             </Label>
             <Textarea
@@ -292,25 +289,26 @@ export default function StatusSelector({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Aggiungi note sul cambio di stato..."
-              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 resize-none"
+              className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 resize-none text-sm sm:text-base min-h-[80px] sm:min-h-[60px]"
               rows={3}
             />
+            <p className="text-xs text-slate-500">{notes.length} caratteri</p>
           </div>
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-2">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isLoading}
-            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full sm:w-auto order-2 sm:order-1 touch-manipulation"
           >
             Annulla
           </Button>
           <Button
             onClick={handleSave}
             disabled={!isFormValid() || isLoading}
-            className="bg-orange-500 hover:bg-orange-600 text-white border-0"
+            className="bg-orange-500 hover:bg-orange-600 text-white border-0 w-full sm:w-auto order-1 sm:order-2 touch-manipulation"
           >
             {isLoading ? (
               <>

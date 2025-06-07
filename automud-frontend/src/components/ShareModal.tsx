@@ -103,30 +103,30 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <Share className="h-5 w-5 text-blue-500" />
+          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <Share className="h-4 sm:h-5 w-4 sm:w-5 text-blue-500" />
             Condividi Richiesta
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Info richiesta */}
-          <div className="bg-slate-700/30 p-4 rounded-lg border border-slate-600">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="font-semibold text-white text-lg">
+        <div className="space-y-4 sm:space-y-6 py-4">
+          {/* Info richiesta - Mobile Responsive */}
+          <div className="bg-slate-700/30 p-3 sm:p-4 rounded-lg border border-slate-600">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-white text-base sm:text-lg break-words">
                   {request.Make} {request.Model} ({request.RegistrationYear})
                 </h3>
-                <p className="text-slate-400 text-sm mt-1">
+                <p className="text-slate-400 text-sm mt-1 break-words">
                   ID: {request.Id} • {request.City} • {request.FirstName} {request.LastName}
                 </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge className="bg-green-600 text-white">
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <Badge className="bg-green-600 text-white text-xs">
                     €{request.DesiredPrice.toLocaleString()}
                   </Badge>
-                  <Badge variant="outline" className="text-slate-300 border-slate-500">
+                  <Badge variant="outline" className="text-slate-300 border-slate-500 text-xs">
                     {request.Offers.length} offerte
                   </Badge>
                 </div>
@@ -135,7 +135,7 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
                 variant="outline"
                 size="sm"
                 onClick={openInNewWindow}
-                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
+                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 w-full sm:w-auto touch-manipulation"
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Apri
@@ -143,26 +143,26 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
             </div>
           </div>
 
-          {/* Link condivisibile */}
+          {/* Link condivisibile - Mobile Responsive */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-white flex items-center gap-2">
-              <Link2 className="h-4 w-4 text-blue-400" />
+            <h4 className="font-semibold text-white flex items-center gap-2 text-sm sm:text-base">
+              <Link2 className="h-3 sm:h-4 w-3 sm:w-4 text-blue-400" />
               Link per Colleghi
             </h4>
             
             <div className="space-y-2">
-              <Label className="text-slate-300 text-sm">Link diretto (richiede accesso al gestionale)</Label>
-              <div className="flex gap-2">
+              <Label className="text-slate-300 text-xs sm:text-sm">Link diretto (richiede accesso al gestionale)</Label>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   value={shareLink}
                   readOnly
-                  className="bg-slate-700 border-slate-600 text-white text-sm font-mono"
+                  className="bg-slate-700 border-slate-600 text-white text-xs sm:text-sm font-mono h-11 sm:h-10 flex-1"
                 />
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => copyToClipboard(shareLink, 'link')}
-                  className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 whitespace-nowrap"
+                  className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 whitespace-nowrap w-full sm:w-auto touch-manipulation"
                 >
                   {copiedLink ? (
                     <>
@@ -180,12 +180,12 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
             </div>
           </div>
 
-          {/* Riassunto testuale */}
+          {/* Riassunto testuale - Mobile Responsive */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-white">Riassunto Testuale</h4>
+            <h4 className="font-semibold text-white text-sm sm:text-base">Riassunto Testuale</h4>
             <div className="space-y-2">
-              <div className="bg-slate-700/50 p-3 rounded border border-slate-600 max-h-32 overflow-y-auto">
-                <pre className="text-sm text-slate-200 whitespace-pre-wrap font-sans">
+              <div className="bg-slate-700/50 p-3 rounded border border-slate-600 max-h-40 sm:max-h-32 overflow-y-auto">
+                <pre className="text-xs sm:text-sm text-slate-200 whitespace-pre-wrap font-sans break-words">
                   {textSummary}
                 </pre>
               </div>
@@ -193,7 +193,7 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
                 variant="outline"
                 size="sm"
                 onClick={() => copyToClipboard(textSummary, 'summary')}
-                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 w-full"
+                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 w-full touch-manipulation"
               >
                 {copiedSummary ? (
                   <>
@@ -210,14 +210,14 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
             </div>
           </div>
 
-          {/* Opzioni condivisione rapida */}
+          {/* Opzioni condivisione rapida - Mobile Responsive */}
           <div className="space-y-3">
-            <h4 className="font-semibold text-white">Condivisione Rapida</h4>
+            <h4 className="font-semibold text-white text-sm sm:text-base">Condivisione Rapida</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Button
                 variant="outline"
                 onClick={shareViaEmail}
-                className="bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30 hover:border-blue-500"
+                className="bg-blue-600/20 border-blue-500/50 text-blue-300 hover:bg-blue-600/30 hover:border-blue-500 w-full touch-manipulation"
               >
                 <Mail className="h-4 w-4 mr-2" />
                 Condividi via Email
@@ -225,7 +225,7 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
               <Button
                 variant="outline"
                 onClick={shareViaWhatsApp}
-                className="bg-green-600/20 border-green-500/50 text-green-300 hover:bg-green-600/30 hover:border-green-500"
+                className="bg-green-600/20 border-green-500/50 text-green-300 hover:bg-green-600/30 hover:border-green-500 w-full touch-manipulation"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
                 Condividi via WhatsApp
@@ -233,15 +233,28 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
             </div>
           </div>
 
-          {/* Note di sicurezza */}
+          {/* Note di sicurezza - Mobile Responsive */}
           <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <Share className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-              <div>
+              <Share className="h-3 sm:h-4 w-3 sm:w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-blue-400">Gestionale Interno</p>
-                <p className="text-sm text-blue-200">
+                <p className="text-sm text-blue-200 break-words">
                   Il link condiviso funziona solo per utenti con accesso al gestionale AutoMud. 
                   Per condividere informazioni con clienti, usa il riassunto testuale.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Helper per mobile */}
+          <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 sm:hidden">
+            <div className="flex items-start gap-2">
+              <Share className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-green-400">Suggerimento</p>
+                <p className="text-sm text-green-200">
+                  Usa WhatsApp per condividere rapidamente con i colleghi in movimento.
                 </p>
               </div>
             </div>
@@ -252,7 +265,7 @@ ${request.Management ? `📊 Margine stimato: €${margin.toLocaleString()}` : '
           <Button
             variant="outline"
             onClick={onClose}
-            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full touch-manipulation"
           >
             <X className="h-4 w-4 mr-2" />
             Chiudi

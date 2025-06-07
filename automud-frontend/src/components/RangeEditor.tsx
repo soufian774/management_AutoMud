@@ -29,7 +29,7 @@ export default function RangeEditor({
   const [rangeMax, setRangeMax] = useState(currentManagement?.RangeMax || 0)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Reset valori quando si apre il modal - usa sempre i valori più aggiornati
+  // Reset valori quando si apre il modal
   const handleOpen = (open: boolean) => {
     if (open) {
       setRangeMin(currentManagement?.RangeMin || 0)
@@ -120,36 +120,36 @@ export default function RangeEditor({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpen}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-2xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-orange-500" />
+          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <BarChart3 className="h-4 sm:h-5 w-4 sm:w-5 text-orange-500" />
             Modifica Range Valutazione
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Info richiesta */}
+        <div className="space-y-4 sm:space-y-6 py-4">
+          {/* Info richiesta - Mobile Responsive */}
           <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-400 break-words">
               <span className="font-medium">Richiesta:</span> {requestId}
             </p>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-400 mt-1 break-words">
               <span className="font-medium">Prezzo Desiderato Cliente:</span> €{desiredPrice.toLocaleString()}
             </p>
           </div>
 
-          {/* Range Editor */}
+          {/* Range Editor - Mobile Responsive */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="h-4 w-4 text-orange-400" />
-              <h3 className="font-semibold text-orange-400">Range di Valutazione</h3>
+              <TrendingUp className="h-3 sm:h-4 w-3 sm:w-4 text-orange-400" />
+              <h3 className="font-semibold text-orange-400 text-sm sm:text-base">Range di Valutazione</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Valore Minimo */}
               <div className="space-y-2">
-                <Label htmlFor="rangeMin" className="text-slate-200">
+                <Label htmlFor="rangeMin" className="text-slate-200 text-sm sm:text-base">
                   Valore Minimo (€)
                 </Label>
                 <Input
@@ -160,13 +160,13 @@ export default function RangeEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
 
               {/* Valore Massimo */}
               <div className="space-y-2">
-                <Label htmlFor="rangeMax" className="text-slate-200">
+                <Label htmlFor="rangeMax" className="text-slate-200 text-sm sm:text-base">
                   Valore Massimo (€)
                 </Label>
                 <Input
@@ -177,19 +177,19 @@ export default function RangeEditor({
                   placeholder="0"
                   min="0"
                   step="1"
-                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
+                  className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20 h-11 sm:h-10 text-base sm:text-sm"
                 />
               </div>
             </div>
 
-            {/* Validazione Range */}
+            {/* Validazione Range - Mobile Responsive */}
             {!isRangeValid() && rangeMin > 0 && rangeMax > 0 && (
               <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 flex-shrink-0" />
-                  <div>
+                  <AlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 text-red-400 mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-red-400">Range non valido</p>
-                    <p className="text-sm text-red-200">
+                    <p className="text-sm text-red-200 break-words">
                       Il valore minimo (€{rangeMin.toLocaleString()}) non può essere maggiore del valore massimo (€{rangeMax.toLocaleString()})
                     </p>
                   </div>
@@ -198,29 +198,29 @@ export default function RangeEditor({
             )}
           </div>
 
-          {/* Analisi Range */}
+          {/* Analisi Range - Mobile Responsive */}
           {isRangeValid() && rangeMin > 0 && rangeMax > 0 && (
-            <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-              <h4 className="font-semibold text-slate-200 mb-3">Analisi Range</h4>
+            <div className="bg-slate-700/50 p-3 sm:p-4 rounded-lg border border-slate-600">
+              <h4 className="font-semibold text-slate-200 mb-3 text-sm sm:text-base">Analisi Range</h4>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Range:</p>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-white text-sm break-words">
                     €{rangeMin.toLocaleString()} - €{rangeMax.toLocaleString()}
                   </p>
                 </div>
                 
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Media Range:</p>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-white text-sm">
                     €{comparison.avgRange.toLocaleString()}
                   </p>
                 </div>
                 
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Vs. Prezzo Desiderato:</p>
-                  <p className={`font-medium ${comparisonColor}`}>
+                  <p className={`font-medium ${comparisonColor} text-sm break-words`}>
                     {isAboveDesired ? '+' : ''}€{comparison.difference.toLocaleString()}
                     {' '}({isAboveDesired ? '+' : ''}{comparison.percentage.toFixed(1)}%)
                   </p>
@@ -228,7 +228,7 @@ export default function RangeEditor({
               </div>
 
               <div className="mt-3 pt-3 border-t border-slate-600">
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 break-words">
                   {isAboveDesired 
                     ? '✅ La valutazione media è superiore al prezzo desiderato dal cliente' 
                     : '⚠️ La valutazione media è inferiore al prezzo desiderato dal cliente'
@@ -238,14 +238,37 @@ export default function RangeEditor({
             </div>
           )}
 
-          {/* Anteprima cambiamenti */}
+          {/* Riepilogo Mobile - Solo su schermi piccoli */}
+          {isRangeValid() && rangeMin > 0 && rangeMax > 0 && (
+            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 sm:hidden">
+              <h4 className="font-semibold text-blue-400 text-sm mb-2">Confronto Rapido</h4>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Cliente vuole:</span>
+                  <span className="font-medium text-white">€{desiredPrice.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Tu valuti:</span>
+                  <span className="font-medium text-white">€{comparison.avgRange.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Differenza:</span>
+                  <span className={`font-medium ${comparisonColor}`}>
+                    {isAboveDesired ? '+' : ''}€{comparison.difference.toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Anteprima cambiamenti - Mobile Responsive */}
           {hasChanges() && (
             <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3">
               <div className="flex items-start gap-2">
-                <BarChart3 className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                <div>
+                <BarChart3 className="h-3 sm:h-4 w-3 sm:w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-blue-400">Modifiche in sospeso</p>
-                  <p className="text-sm text-blue-200">
+                  <p className="text-sm text-blue-200 break-words">
                     Il range di valutazione è stato modificato. Clicca "Salva" per confermare i cambiamenti.
                   </p>
                 </div>
@@ -254,12 +277,12 @@ export default function RangeEditor({
           )}
         </div>
 
-        <DialogFooter className="flex gap-2">
+        <DialogFooter className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={onClose}
             disabled={isLoading}
-            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full sm:w-auto order-2 sm:order-1 touch-manipulation"
           >
             <X className="h-4 w-4 mr-2" />
             Annulla
@@ -267,7 +290,7 @@ export default function RangeEditor({
           <Button
             onClick={handleSave}
             disabled={!hasChanges() || !isRangeValid() || isLoading}
-            className="bg-orange-500 hover:bg-orange-600 text-white border-0"
+            className="bg-orange-500 hover:bg-orange-600 text-white border-0 w-full sm:w-auto order-1 sm:order-2 touch-manipulation"
           >
             {isLoading ? (
               <>

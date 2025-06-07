@@ -239,76 +239,76 @@ export default function OffersEditor({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpen}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-slate-800 border-slate-700 text-white w-[95vw] max-w-4xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-green-500" />
+          <DialogTitle className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+            <DollarSign className="h-4 sm:h-5 w-4 sm:w-5 text-green-500" />
             Gestione Offerte Partner ({offers.length})
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Info richiesta */}
+        <div className="space-y-4 sm:space-y-6 py-4">
+          {/* Info richiesta - Mobile Responsive */}
           <div className="bg-slate-700/30 p-3 rounded-lg border border-slate-600">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-400 break-words">
               <span className="font-medium">Richiesta:</span> {requestId}
             </p>
           </div>
 
-          {/* Statistiche offerte */}
+          {/* Statistiche offerte - Mobile Responsive */}
           {stats && (
-            <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4">
-              <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
+            <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                <DollarSign className="h-3 sm:h-4 w-3 sm:w-4" />
                 Statistiche Offerte
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Totale:</p>
                   <p className="font-medium text-white">{stats.count}</p>
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Massima:</p>
-                  <p className="font-medium text-green-400">€{stats.maxPrice.toLocaleString()}</p>
+                  <p className="font-medium text-green-400 text-xs sm:text-sm">€{stats.maxPrice.toLocaleString()}</p>
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Minima:</p>
-                  <p className="font-medium text-red-400">€{stats.minPrice.toLocaleString()}</p>
+                  <p className="font-medium text-red-400 text-xs sm:text-sm">€{stats.minPrice.toLocaleString()}</p>
                 </div>
-                <div>
+                <div className="text-center sm:text-left">
                   <p className="text-slate-400">Media:</p>
-                  <p className="font-medium text-blue-400">€{stats.avgPrice.toLocaleString()}</p>
+                  <p className="font-medium text-blue-400 text-xs sm:text-sm">€{stats.avgPrice.toLocaleString()}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Pulsante aggiungi offerta */}
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-white">Elenco Offerte</h3>
+          {/* Header con pulsante aggiungi - Mobile Responsive */}
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h3 className="text-base sm:text-lg font-semibold text-white">Elenco Offerte</h3>
             <Button
               onClick={handleAddOffer}
               disabled={isLoading || isFormOpen}
-              className="bg-green-500 hover:bg-green-600 text-white border-0"
+              className="bg-green-500 hover:bg-green-600 text-white border-0 w-full sm:w-auto touch-manipulation"
             >
               <Plus className="h-4 w-4 mr-2" />
               Aggiungi Offerta
             </Button>
           </div>
 
-          {/* Form aggiunta/modifica offerta */}
+          {/* Form aggiunta/modifica offerta - Mobile Responsive */}
           {isFormOpen && (
-            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-400 mb-4 flex items-center gap-2">
-                {editingOffer ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 sm:p-4">
+              <h4 className="font-semibold text-blue-400 mb-4 flex items-center gap-2 text-sm sm:text-base">
+                {editingOffer ? <Edit className="h-3 sm:h-4 w-3 sm:w-4" /> : <Plus className="h-3 sm:h-4 w-3 sm:w-4" />}
                 {editingOffer ? 'Modifica Offerta' : 'Nuova Offerta'}
               </h4>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Descrizione */}
-                  <div className="md:col-span-2 space-y-2">
-                    <Label htmlFor="offerDescription" className="text-slate-200">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Descrizione - Mobile Full Width */}
+                  <div className="sm:col-span-2 space-y-2">
+                    <Label htmlFor="offerDescription" className="text-slate-200 text-sm sm:text-base">
                       Descrizione Offerta *
                     </Label>
                     <Textarea
@@ -316,14 +316,15 @@ export default function OffersEditor({
                       value={formData.offerDescription}
                       onChange={(e) => setFormData(prev => ({ ...prev, offerDescription: e.target.value }))}
                       placeholder="es. Offerta Autodealer Milano - Valutazione completa..."
-                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 resize-none focus:border-blue-500 focus:ring-blue-500/20"
+                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 resize-none focus:border-blue-500 focus:ring-blue-500/20 min-h-[80px] sm:min-h-[60px] text-sm sm:text-base"
                       rows={3}
                     />
+                    <p className="text-xs text-slate-500">{formData.offerDescription.length} caratteri</p>
                   </div>
 
                   {/* Prezzo */}
                   <div className="space-y-2">
-                    <Label htmlFor="offerPrice" className="text-slate-200">
+                    <Label htmlFor="offerPrice" className="text-slate-200 text-sm sm:text-base">
                       Prezzo Offerto (€) *
                     </Label>
                     <Input
@@ -334,18 +335,18 @@ export default function OffersEditor({
                       placeholder="0"
                       min="0"
                       step="1"
-                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20"
+                      className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 focus:border-blue-500 focus:ring-blue-500/20 h-11 sm:h-10 text-base sm:text-sm"
                     />
                   </div>
                 </div>
 
-                {/* Pulsanti form */}
-                <div className="flex gap-2 justify-end">
+                {/* Pulsanti form - Mobile Stack */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                   <Button
                     variant="outline"
                     onClick={resetForm}
                     disabled={isLoading}
-                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full sm:w-auto order-2 sm:order-1 touch-manipulation"
                   >
                     <X className="h-4 w-4 mr-2" />
                     Annulla
@@ -353,7 +354,7 @@ export default function OffersEditor({
                   <Button
                     onClick={handleSaveOffer}
                     disabled={!isFormValid() || !hasFormChanges() || isLoading}
-                    className="bg-blue-500 hover:bg-blue-600 text-white border-0"
+                    className="bg-blue-500 hover:bg-blue-600 text-white border-0 w-full sm:w-auto order-1 sm:order-2 touch-manipulation"
                   >
                     {isLoading ? (
                       <>
@@ -372,47 +373,45 @@ export default function OffersEditor({
             </div>
           )}
 
-          {/* Lista offerte */}
+          {/* Lista offerte - Mobile Responsive */}
           <div className="space-y-3">
             {offers.length > 0 ? (
               offers.map((offer) => (
-                <div key={offer.Id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    {/* Info offerta */}
-                    <div className="flex-1">
-                      <div className="flex items-start gap-3 mb-2">
-                        <div className="flex-1">
-                          <h5 className="font-medium text-white text-sm leading-relaxed">
-                            {offer.OfferDescription}
-                          </h5>
-                          <div className="flex items-center gap-4 mt-2">
-                            <div className="flex items-center gap-1 text-xs text-slate-400">
-                              <Calendar className="h-3 w-3" />
-                              <span>{formatDate(offer.OfferDate)}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs text-slate-300 border-slate-500">
-                              ID: {offer.Id}
-                            </Badge>
+                <div key={offer.Id} className="bg-slate-700/50 border border-slate-600 rounded-lg p-3 sm:p-4">
+                  <div className="flex flex-col gap-3">
+                    {/* Header offerta - Mobile Stack */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h5 className="font-medium text-white text-sm leading-relaxed break-words">
+                          {offer.OfferDescription}
+                        </h5>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2">
+                          <div className="flex items-center gap-1 text-xs text-slate-400">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(offer.OfferDate)}</span>
                           </div>
+                          <Badge variant="outline" className="text-xs text-slate-300 border-slate-500">
+                            ID: {offer.Id}
+                          </Badge>
                         </div>
-                        
-                        {/* Prezzo in evidenza */}
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-green-400">
-                            €{offer.OfferPrice.toLocaleString()}
-                          </div>
+                      </div>
+                      
+                      {/* Prezzo in evidenza - Mobile Center */}
+                      <div className="text-center sm:text-right">
+                        <div className="text-lg sm:text-xl font-bold text-green-400">
+                          €{offer.OfferPrice.toLocaleString()}
                         </div>
                       </div>
                     </div>
 
-                    {/* Azioni */}
-                    <div className="flex gap-2">
+                    {/* Azioni - Mobile Full Width */}
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleEditOffer(offer)}
                         disabled={isLoading || isFormOpen}
-                        className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500"
+                        className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 w-full sm:w-auto touch-manipulation"
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Modifica
@@ -422,7 +421,7 @@ export default function OffersEditor({
                         size="sm"
                         onClick={() => handleDeleteOffer(offer)}
                         disabled={isLoading}
-                        className="bg-red-600 hover:bg-red-700 border-red-500"
+                        className="bg-red-600 hover:bg-red-700 border-red-500 w-full sm:w-auto touch-manipulation"
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
                         Elimina
@@ -432,18 +431,18 @@ export default function OffersEditor({
                 </div>
               ))
             ) : (
-              <div className="text-center py-12">
-                <DollarSign className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2">
+              <div className="text-center py-8 sm:py-12">
+                <DollarSign className="h-12 sm:h-16 w-12 sm:w-16 text-slate-400 mx-auto mb-3 sm:mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
                   Nessuna offerta ancora presente
                 </h3>
-                <p className="text-slate-400 mb-4">
+                <p className="text-slate-400 mb-4 text-sm sm:text-base px-4">
                   Aggiungi la prima offerta per iniziare a gestire le proposte dei partner
                 </p>
                 <Button
                   onClick={handleAddOffer}
                   disabled={isLoading || isFormOpen}
-                  className="bg-green-500 hover:bg-green-600 text-white border-0"
+                  className="bg-green-500 hover:bg-green-600 text-white border-0 w-full sm:w-auto touch-manipulation"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Aggiungi Prima Offerta
@@ -452,14 +451,14 @@ export default function OffersEditor({
             )}
           </div>
 
-          {/* Warning se form aperto */}
+          {/* Warning se form aperto - Mobile Responsive */}
           {isFormOpen && (
             <div className="bg-orange-900/20 border border-orange-700/50 rounded-lg p-3">
               <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
-                <div>
+                <AlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-orange-400">Modifica in corso</p>
-                  <p className="text-sm text-orange-200">
+                  <p className="text-sm text-orange-200 break-words">
                     Completa o annulla la modifica dell'offerta prima di chiudere il modal.
                   </p>
                 </div>
@@ -473,7 +472,7 @@ export default function OffersEditor({
             variant="outline"
             onClick={onClose}
             disabled={isLoading || isFormOpen}
-            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 w-full touch-manipulation"
           >
             <X className="h-4 w-4 mr-2" />
             {isFormOpen ? 'Annulla modifica prima di chiudere' : 'Chiudi'}
