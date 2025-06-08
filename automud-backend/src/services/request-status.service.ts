@@ -7,10 +7,19 @@ import { RequestStatusRecord, StatusChangeRequest } from '../models/request-stat
  */
 export async function getStatusHistoryByRequestId(requestId: string): Promise<RequestStatusRecord[]> {
   const query = `
-    SELECT "Id", "RequestId", "Status", "ChangeDate"
-    FROM "RequestStatuses"
-    WHERE "RequestId" = $1
-    ORDER BY "ChangeDate" ASC
+    SELECT 
+      rs."Id", 
+      rs."RequestId", 
+      rs."Status", 
+      rs."ChangeDate",
+      rs."Notes",
+      rm."FinalOutcome",
+      rm."RequestCloseReason" as "CloseReason"
+    FROM "RequestStatuses" rs
+    LEFT JOIN "RequestManagements" rm ON rs."RequestId" = rm."RequestId" 
+      AND rs."Status" = 40  -- Solo per stati "Esito finale"
+    WHERE rs."RequestId" = $1
+    ORDER BY rs."ChangeDate" ASC
   `;
 
   const result = await pool.query(query, [requestId]);
@@ -40,14 +49,15 @@ export async function getCurrentStatusByRequestId(requestId: string): Promise<Re
  */
 export async function addStatusChange(statusChange: StatusChangeRequest): Promise<RequestStatusRecord> {
   const query = `
-    INSERT INTO "RequestStatuses" ("RequestId", "Status", "ChangeDate")
-    VALUES ($1, $2, NOW())
-    RETURNING "Id", "RequestId", "Status", "ChangeDate"
+    INSERT INTO "RequestStatuses" ("RequestId", "Status", "ChangeDate", "Notes")
+    VALUES ($1, $2, NOW(), $3)
+    RETURNING "Id", "RequestId", "Status", "ChangeDate", "Notes"
   `;
 
   const result = await pool.query(query, [
     statusChange.RequestId,
-    statusChange.NewStatus
+    statusChange.NewStatus,
+    statusChange.Notes || null
   ]);
 
   return result.rows[0];

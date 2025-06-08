@@ -8,5 +8,5 @@ export interface RequestManagementRecord {
   PurchasePrice: number;         // Prezzo di acquisto
   SalePrice: number;             // Prezzo di vendita
   RequestCloseReason: number;    // Motivo di chiusura (se applicabile)
-  // FinalOutcome?: number;      // TODO: Aggiungere quando si crea la colonna nel DB
+  FinalOutcome?: number;         // Esito Finale
 }

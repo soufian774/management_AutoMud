@@ -92,53 +92,56 @@ export default function StatusSelector({
   }
 
   // Salvataggio
-  const handleSave = async () => {
-    if (!isFormValid()) return
+const handleSave = async () => {
+  if (!isFormValid()) return
 
-    setIsLoading(true)
-    try {
-      const auth = localStorage.getItem('automud_auth')
-      if (!auth) {
-        throw new Error('Utente non autenticato')
-      }
-
-      const statusChangeData: StatusChangeRequest = {
-        RequestId: requestId,
-        NewStatus: selectedStatus,
-        FinalOutcome: selectedOutcome || undefined,
-        CloseReason: selectedReason || undefined,
-        Notes: notes || undefined
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/request/${requestId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Basic ${auth}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(statusChangeData)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `Errore ${response.status}`)
-      }
-
-      const result = await response.json()
-      console.log('✅ Stato cambiato con successo:', result)
-      
-      // Callback al parent
-      onStatusChanged(selectedStatus, selectedOutcome || undefined, selectedReason || undefined)
-      
-      // Chiudi modal
-      handleClose()
-    } catch (error) {
-      console.error('❌ Errore nel cambio stato:', error)
-      alert(error instanceof Error ? error.message : 'Errore sconosciuto')
-    } finally {
-      setIsLoading(false)
+  setIsLoading(true)
+  try {
+    const auth = localStorage.getItem('automud_auth')
+    if (!auth) {
+      throw new Error('Utente non autenticato')
     }
+
+    // ✅ NUOVO: Costruisci l'oggetto con FinalOutcome
+    const statusChangeData: StatusChangeRequest = {
+      RequestId: requestId,
+      NewStatus: selectedStatus,
+      FinalOutcome: requiresFinalOutcome() ? selectedOutcome : undefined,
+      CloseReason: requiresCloseReason() ? selectedReason : undefined,
+      Notes: notes || undefined
+    }
+
+    console.log('🔄 Sending status change:', statusChangeData) // ✅ AGGIUNGI questo log
+
+    const response = await fetch(`${API_BASE_URL}/api/request/${requestId}/status`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Basic ${auth}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(statusChangeData)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || `Errore ${response.status}`)
+    }
+
+    const result = await response.json()
+    console.log('✅ Status changed successfully:', result)
+    
+    // Callback al parent
+    onStatusChanged(selectedStatus, selectedOutcome || undefined, selectedReason || undefined)
+    
+    // Chiudi modal
+    handleClose()
+  } catch (error) {
+    console.error('❌ Errore nel cambio stato:', error)
+    alert(error instanceof Error ? error.message : 'Errore sconosciuto')
+  } finally {
+    setIsLoading(false)
   }
+}
 
   // Helper per il badge styles
   const getBadgeStyles = (variant: string) => {

@@ -1,8 +1,11 @@
 export interface RequestStatusRecord {
-  Id: number;                    // ID univoco del record di stato
-  RequestId: string;             // ID della richiesta (FK)
-  Status: number;                // Codice stato (10=Da chiamare, 20=In corso, 30=Prati-ritiro, 40=Esito finale)
-  ChangeDate: string;            // Data e ora del cambio stato (ISO string)
+  Id: number;
+  RequestId: string;
+  Status: number;
+  ChangeDate: string;
+  Notes?: string;         
+  FinalOutcome?: number;  
+  CloseReason?: number;   
 }
 
 export interface StatusChangeRequest {

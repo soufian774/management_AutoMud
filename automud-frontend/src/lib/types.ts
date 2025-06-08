@@ -133,6 +133,9 @@ export interface RequestStatus {
   RequestId: string;
   Status: number;
   ChangeDate: string; // ISO string
+  Notes?: string;          
+  FinalOutcome?: number;     
+  CloseReason?: number;    
 }
 
 export interface RequestImage {

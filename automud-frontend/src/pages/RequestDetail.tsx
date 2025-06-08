@@ -28,7 +28,7 @@ import {
   ArrowRight,
   Download
 } from 'lucide-react'
-import { type CompleteRequestDetail, type RequestOffer, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor} from '@/lib/types'
+import { type CompleteRequestDetail, type RequestOffer, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor, FinalOutcomeEnum, CloseReasonEnum} from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
 import StatusSelector from '@/components/StatusSelector'
 import NotesEditor from '@/components/NotesEditor'
@@ -987,18 +987,69 @@ export default function RequestDetail() {
                             ? [...request.StatusHistory].reverse() 
                             : [...request.StatusHistory].reverse().slice(0, 3)
                           ).map((status) => (
-                            <div key={status.Id} className="flex items-center justify-between py-2 px-3 bg-slate-700/30 rounded">
-                              <Badge 
-                                className={`text-xs ${getBadgeStyles(getStatusColor(status.Status))}`}
-                              >
-                                {RequestStatusEnum[status.Status]}
-                              </Badge>
-                              <span className="text-xs text-slate-400">
-                                {formatDate(status.ChangeDate)}
-                              </span>
+                            <div key={status.Id} className="bg-slate-700/30 rounded p-3 space-y-2">
+                              {/* Header stato - Mobile responsive */}
+                              <div className="flex items-center justify-between">
+                                <Badge 
+                                  className={`text-xs ${getBadgeStyles(getStatusColor(status.Status))}`}
+                                >
+                                  {RequestStatusEnum[status.Status]}
+                                </Badge>
+                                <span className="text-xs text-slate-400">
+                                  {formatDate(status.ChangeDate)}
+                                </span>
+                              </div>
+                              
+                              {/* Dettagli Esito Finale - Mobile stack */}
+                              {status.Status === 40 && status.FinalOutcome && (
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-400">Esito:</span>
+                                    <Badge 
+                                      className={`text-xs ${
+                                        status.FinalOutcome === 10 ? 'bg-green-600 text-white' :
+                                        status.FinalOutcome === 20 ? 'bg-orange-600 text-white' :
+                                        'bg-red-600 text-white'
+                                      }`}
+                                    >
+                                      {FinalOutcomeEnum[status.FinalOutcome]}
+                                    </Badge>
+                                  </div>
+                                  
+                                  {/* Motivo se Non Acquistata - Mobile wrap */}
+                                  {status.FinalOutcome === 30 && status.CloseReason && (
+                                    <div className="space-y-1">
+                                      <span className="text-xs text-slate-400 block">Motivo:</span>
+                                      <div className="flex items-start gap-2">
+                                        <Badge className="bg-red-700 text-white text-xs leading-tight">
+                                          {CloseReasonEnum[status.CloseReason]}
+                                        </Badge>
+                                        {/* Icona email se automazione */}
+                                        {status.CloseReason === 20 && (
+                                          <div className="flex items-center gap-1">
+                                            <Mail className="h-3 w-3 text-orange-400" />
+                                            <span className="text-xs text-orange-400">Email auto</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Note cambio stato - Mobile responsive */}
+                              {status.Notes && (
+                                <div className="pt-2 border-t border-slate-600">
+                                  <span className="text-xs text-slate-400 block mb-1">Note cambio stato:</span>
+                                  <p className="text-xs text-white bg-slate-600/30 p-2 rounded leading-relaxed break-words">
+                                    {status.Notes}
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           ))}
                           
+                          {/* Pulsante espandi/contrai - Mobile friendly */}
                           {request.StatusHistory.length > 3 && (
                             <div className="mt-3">
                               {!showAllStates && (
@@ -1446,15 +1497,65 @@ export default function RequestDetail() {
                   <div className="space-y-3">
                     {request.StatusHistory.length > 0 ? (
                       [...request.StatusHistory].reverse().map((status) => (
-                        <div key={status.Id} className="flex items-center justify-between py-2">
-                          <Badge 
-                            className={`text-xs ${getBadgeStyles(getStatusColor(status.Status))}`}
-                          >
-                            {RequestStatusEnum[status.Status]}
-                          </Badge>
-                          <span className="text-xs text-slate-400">
-                            {formatDate(status.ChangeDate)}
-                          </span>
+                        <div key={status.Id} className="bg-slate-700/30 rounded p-4 space-y-3">
+                          {/* Header stato */}
+                          <div className="flex items-center justify-between">
+                            <Badge 
+                              className={`text-sm ${getBadgeStyles(getStatusColor(status.Status))}`}
+                            >
+                              {RequestStatusEnum[status.Status]}
+                            </Badge>
+                            <span className="text-sm text-slate-400">
+                              {formatDate(status.ChangeDate)}
+                            </span>
+                          </div>
+                          
+                          {/* Dettagli Esito Finale */}
+                          {status.Status === 40 && status.FinalOutcome && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm text-slate-400">Esito:</span>
+                                <Badge 
+                                  className={`text-sm ${
+                                    status.FinalOutcome === 10 ? 'bg-green-600 text-white' :
+                                    status.FinalOutcome === 20 ? 'bg-orange-600 text-white' :
+                                    'bg-red-600 text-white'
+                                  }`}
+                                >
+                                  {FinalOutcomeEnum[status.FinalOutcome]}
+                                </Badge>
+                              </div>
+                              
+                              {/* Motivo se Non Acquistata */}
+                              {status.FinalOutcome === 30 && status.CloseReason && (
+                                <div className="space-y-2">
+                                  <span className="text-sm text-slate-400 block">Motivo:</span>
+                                  <div className="flex items-center gap-3">
+                                    <Badge className="bg-red-700 text-white text-sm">
+                                      {CloseReasonEnum[status.CloseReason]}
+                                    </Badge>
+                                    {/* Icona email se automazione */}
+                                    {status.CloseReason === 20 && (
+                                      <div className="flex items-center gap-2">
+                                        <Mail className="h-4 w-4 text-orange-400" />
+                                        <span className="text-sm text-orange-400">Email automatica inviata</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Note cambio stato */}
+                          {status.Notes && (
+                            <div className="pt-3 border-t border-slate-600">
+                              <span className="text-sm text-slate-400 block mb-2">Note cambio stato:</span>
+                              <p className="text-sm text-white bg-slate-600/30 p-3 rounded leading-relaxed">
+                                {status.Notes}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       ))
                     ) : (

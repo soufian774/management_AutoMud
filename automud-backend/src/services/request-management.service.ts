@@ -27,9 +27,9 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
     INSERT INTO "RequestManagements" (
       "RequestId", "Notes", "RangeMin", "RangeMax", 
       "RegistrationCost", "TransportCost", "PurchasePrice", 
-      "SalePrice", "RequestCloseReason"
+      "SalePrice", "RequestCloseReason", "FinalOutcome"
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     ON CONFLICT ("RequestId") DO UPDATE SET
       "Notes" = EXCLUDED."Notes",
       "RangeMin" = EXCLUDED."RangeMin",
@@ -38,7 +38,8 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
       "TransportCost" = EXCLUDED."TransportCost",
       "PurchasePrice" = EXCLUDED."PurchasePrice",
       "SalePrice" = EXCLUDED."SalePrice",
-      "RequestCloseReason" = EXCLUDED."RequestCloseReason"
+      "RequestCloseReason" = EXCLUDED."RequestCloseReason",
+      "FinalOutcome" = EXCLUDED."FinalOutcome"
     RETURNING *
   `;
 
@@ -51,7 +52,8 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
     management.TransportCost,
     management.PurchasePrice,
     management.SalePrice,
-    management.RequestCloseReason
+    management.RequestCloseReason,
+    management.FinalOutcome || null
   ]);
 
   return result.rows[0];
@@ -68,16 +70,17 @@ export async function updateFinalOutcome(
   finalOutcome?: number, 
   closeReason?: number
 ): Promise<RequestManagementRecord | null> {
-  // Per ora aggiorna solo il motivo di chiusura, dato che FinalOutcome non esiste nella tabella
+  // ✅ Ora aggiorniamo sia FinalOutcome che RequestCloseReason
   const query = `
     UPDATE "RequestManagements"
-    SET "RequestCloseReason" = $2
+    SET "FinalOutcome" = $2, "RequestCloseReason" = $3
     WHERE "RequestId" = $1
     RETURNING *
   `;
 
   const result = await pool.query(query, [
     requestId,
+    finalOutcome || null,
     closeReason || 0
   ]);
 
