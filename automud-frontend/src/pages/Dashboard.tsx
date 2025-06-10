@@ -1,6 +1,6 @@
 // src/pages/Dashboard.tsx
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { RequestCard } from '@/components/RequestCard'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -10,12 +10,17 @@ import { API_BASE_URL } from '@/lib/api'
 
 const Dashboard = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   const [requests, setRequests] = useState<AutoRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [page, setPage] = useState(1)
+  //Inizializza page dal parametro URL se presente
+  const [page, setPage] = useState(() => {
+    const urlPage = searchParams.get('page')
+    return urlPage ? parseInt(urlPage, 10) : 1
+  })
   const [totalPages, setTotalPages] = useState(1)
   const [totalResults, setTotalResults] = useState(0)
   const [pageInput, setPageInput] = useState('')
@@ -180,7 +185,8 @@ const Dashboard = () => {
 
   const handleView = (req: AutoRequest) => {
     console.log('📖 Navigando a dettaglio richiesta:', req.Id)
-    navigate(`/request/${req.Id}`)
+    //Aggiungi la pagina corrente come parametro URL
+    navigate(`/request/${req.Id}?page=${page}`)
   }
 
   const handleLogout = () => {
@@ -363,13 +369,17 @@ const Dashboard = () => {
               
               <div className="flex items-center gap-2">
                 <Button
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  disabled={page === 1}
-                  className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
+                size="sm"
+                onClick={() => {
+                  const newPage = Math.max(page - 1, 1)
+                  setPage(newPage)
+                  setSearchParams({ page: newPage.toString() })
+                }}
+                disabled={page === 1}
+                className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
                 
                 <div className="flex items-center gap-2 px-3">
                   <Input
@@ -383,6 +393,7 @@ const Dashboard = () => {
                         const val = parseInt(pageInput);
                         if (val >= 1 && val <= totalPages) {
                           setPage(val);
+                          setSearchParams({ page: val.toString() });
                           setPageInput('');
                         }
                       }
@@ -394,7 +405,11 @@ const Dashboard = () => {
                 
                 <Button
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() => {
+                    const newPage = Math.min(page + 1, totalPages)
+                    setPage(newPage)
+                    setSearchParams({ page: newPage.toString() })
+                  }}
                   disabled={page === totalPages}
                   className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
                 >
@@ -409,7 +424,10 @@ const Dashboard = () => {
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
-                  onClick={() => setPage(1)}
+                  onClick={() => {
+                    setPage(1)
+                    setSearchParams({ page: '1' })
+                  }}
                   disabled={page === 1}
                   className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
                 >
@@ -417,7 +435,11 @@ const Dashboard = () => {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  onClick={() => {
+                    const newPage = Math.max(page - 1, 1)
+                    setPage(newPage)
+                    setSearchParams({ page: newPage.toString() })
+                  }}
                   disabled={page === 1}
                   className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
                 >
@@ -437,7 +459,10 @@ const Dashboard = () => {
                         <Button
                           key={1}
                           size="sm"
-                          onClick={() => setPage(1)}
+                          onClick={() => {
+                            setPage(1)
+                            setSearchParams({ page: '1' })
+                          }}                          
                           className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 w-8"
                         >
                           1
@@ -454,7 +479,10 @@ const Dashboard = () => {
                         <Button
                           key={i}
                           size="sm"
-                          onClick={() => setPage(i)}
+                          onClick={() => {
+                            setPage(i)
+                            setSearchParams({ page: i.toString() })
+                          }}                          
                           className={`w-8 ${
                             i === page 
                               ? "bg-orange-500 border-orange-500 text-white hover:bg-orange-600" 
@@ -473,12 +501,15 @@ const Dashboard = () => {
                       }
                       pages.push(
                         <Button
-                          key={totalPages}
                           size="sm"
-                          onClick={() => setPage(totalPages)}
-                          className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 w-8"
+                          onClick={() => {
+                            setPage(totalPages)
+                            setSearchParams({ page: totalPages.toString() })
+                          }}
+                          disabled={page === totalPages}
+                          className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
                         >
-                          {totalPages}
+                          »»
                         </Button>
                       );
                     }
@@ -489,7 +520,11 @@ const Dashboard = () => {
 
                 <Button
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() => {
+                    const newPage = Math.min(page + 1, totalPages)
+                    setPage(newPage)
+                    setSearchParams({ page: newPage.toString() })
+                  }}
                   disabled={page === totalPages}
                   className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
                 >
@@ -497,7 +532,10 @@ const Dashboard = () => {
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => setPage(totalPages)}
+                  onClick={() => {
+                    setPage(totalPages)
+                    setSearchParams({ page: totalPages.toString() })
+                  }}
                   disabled={page === totalPages}
                   className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
                 >
@@ -519,6 +557,7 @@ const Dashboard = () => {
                       const val = parseInt(pageInput);
                       if (val >= 1 && val <= totalPages) {
                         setPage(val);
+                        setSearchParams({ page: val.toString() });
                         setPageInput('');
                       }
                     }
@@ -527,6 +566,7 @@ const Dashboard = () => {
                     const val = parseInt(pageInput);
                     if (val >= 1 && val <= totalPages) {
                       setPage(val);
+                      setSearchParams({ page: val.toString() });
                     }
                     setPageInput('');
                   }}

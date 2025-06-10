@@ -7,15 +7,40 @@ import { RequestManagementRecord } from '../models/request-management.model';
  */
 export async function getManagementByRequestId(requestId: string): Promise<RequestManagementRecord | null> {
   const query = `
-    SELECT "RequestId", "Notes", "RangeMin", "RangeMax", 
-           "RegistrationCost", "TransportCost", "PurchasePrice", 
-           "SalePrice", "RequestCloseReason"
+    SELECT 
+      "RequestId", 
+      COALESCE("Notes", '') AS "Notes",
+      COALESCE("RangeMin", 0) AS "RangeMin",
+      COALESCE("RangeMax", 0) AS "RangeMax", 
+      COALESCE("RegistrationCost", 0) AS "RegistrationCost",
+      COALESCE("TransportCost", 0) AS "TransportCost",
+      COALESCE("PurchasePrice", 0) AS "PurchasePrice",
+      COALESCE("SalePrice", 0) AS "SalePrice",
+      COALESCE("RequestCloseReason", 0) AS "RequestCloseReason",
+      "FinalOutcome"
     FROM "RequestManagements"
     WHERE "RequestId" = $1
   `;
 
   const result = await pool.query(query, [requestId]);
-  return result.rows[0] || null;
+  
+  // 🎯 Se non esiste record, ritorna default values invece di null
+  if (result.rows.length === 0) {
+    return {
+      RequestId: requestId,
+      Notes: '',
+      RangeMin: 0,
+      RangeMax: 0,
+      RegistrationCost: 0,
+      TransportCost: 0,
+      PurchasePrice: 0,
+      SalePrice: 0,
+      RequestCloseReason: 0,
+      FinalOutcome: undefined
+    };
+  }
+  
+  return result.rows[0];
 }
 
 /**

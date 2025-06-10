@@ -23,6 +23,26 @@ export async function getStatusHistoryByRequestId(requestId: string): Promise<Re
   `;
 
   const result = await pool.query(query, [requestId]);
+  
+  // 🎯 Se non ci sono stati, crea uno stato default "Da chiamare"
+  if (result.rows.length === 0) {
+    // Ottieni la data/ora della richiesta per usarla come ChangeDate
+    const requestQuery = `SELECT "DateTime" FROM "Requests" WHERE "Id" = $1`;
+    const requestResult = await pool.query(requestQuery, [requestId]);
+    
+    const requestDateTime = requestResult.rows[0]?.DateTime || new Date().toISOString();
+    
+    return [{
+      Id: 0, // ID fittizio per il frontend
+      RequestId: requestId,
+      Status: 10, // "Da chiamare"
+      ChangeDate: requestDateTime, // Data/ora della richiesta originale
+      Notes: undefined,
+      FinalOutcome: undefined,
+      CloseReason: undefined
+    }];
+  }
+  
   return result.rows;
 }
 
@@ -32,7 +52,7 @@ export async function getStatusHistoryByRequestId(requestId: string): Promise<Re
  */
 export async function getCurrentStatusByRequestId(requestId: string): Promise<RequestStatusRecord | null> {
   const query = `
-    SELECT "Id", "RequestId", "Status", "ChangeDate"
+    SELECT "Id", "RequestId", "Status", "ChangeDate", "Notes"
     FROM "RequestStatuses"
     WHERE "RequestId" = $1
     ORDER BY "ChangeDate" DESC
@@ -40,7 +60,24 @@ export async function getCurrentStatusByRequestId(requestId: string): Promise<Re
   `;
 
   const result = await pool.query(query, [requestId]);
-  return result.rows[0] || null;
+  
+  // 🎯 Se non esiste stato, ritorna "Da chiamare" con data richiesta
+  if (result.rows.length === 0) {
+    const requestQuery = `SELECT "DateTime" FROM "Requests" WHERE "Id" = $1`;
+    const requestResult = await pool.query(requestQuery, [requestId]);
+    
+    const requestDateTime = requestResult.rows[0]?.DateTime || new Date().toISOString();
+    
+    return {
+      Id: 0, // ID fittizio
+      RequestId: requestId,
+      Status: 10, // "Da chiamare"
+      ChangeDate: requestDateTime,
+      Notes: undefined
+    };
+  }
+  
+  return result.rows[0];
 }
 
 /**

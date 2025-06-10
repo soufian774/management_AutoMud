@@ -12,14 +12,10 @@ import {
   Plus,
   AlertTriangle,
   CheckCircle,
-  Eye,
   FileImage,
-  Download,
   Info,
   Zap,
-  Camera,
-  ArrowLeft,
-  ArrowRight
+  Camera
 } from 'lucide-react'
 import { API_BASE_URL } from '@/lib/api'
 import { useConfirmation } from './ConfirmationDialog'
@@ -64,10 +60,6 @@ export default function ImageManager({
   const [images, setImages] = useState<RequestImage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  
-  // Stati per visualizzazione immagini
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   
   // Stati per upload
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([])
@@ -177,15 +169,15 @@ export default function ImageManager({
     }
   }
 
-  // 🔧 AGGIORNATO: Validazione file con limite 20MB
+  // Validazione file con limite 20MB
   const validateFiles = (files: File[]) => {
-    const maxSize = 20 * 1024 * 1024 // 🚨 CAMBIATO: 20MB invece di 10MB
+    const maxSize = 20 * 1024 * 1024 // 20MB
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     
     const validFiles: File[] = []
     const errors: string[] = []
 
-    // 📏 Utility per formattare dimensioni file
+    // Utility per formattare dimensioni file
     const formatFileSize = (bytes: number): string => {
       if (bytes === 0) return '0 Bytes'
       const k = 1024
@@ -198,7 +190,6 @@ export default function ImageManager({
       if (!allowedTypes.includes(file.type)) {
         errors.push(`${file.name}: Formato non supportato. Usa JPEG, PNG, GIF o WebP.`)
       } else if (file.size > maxSize) {
-        // 🚨 AGGIORNATO: Messaggio di errore con dimensione file e limite 20MB
         errors.push(`${file.name}: File troppo grande (${formatFileSize(file.size)}). Massimo 20MB consentiti.`)
       } else {
         validFiles.push(file)
@@ -447,41 +438,6 @@ export default function ImageManager({
     })
   }
 
-  // Apre modal immagine ingrandita
-  const openImageModal = (index: number) => {
-    setSelectedImageIndex(index)
-    setIsImageModalOpen(true)
-  }
-
-  // Gestione tasti nel modal immagini
-  useEffect(() => {
-    if (!isImageModalOpen) return
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      switch (e.key) {
-        case 'Escape':
-          setIsImageModalOpen(false)
-          break
-        case 'ArrowLeft':
-          e.preventDefault()
-          setSelectedImageIndex(prev => prev === 0 ? images.length - 1 : prev - 1)
-          break
-        case 'ArrowRight':
-          e.preventDefault()
-          setSelectedImageIndex(prev => prev === images.length - 1 ? 0 : prev + 1)
-          break
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = 'unset'
-    }
-  }, [isImageModalOpen, images.length])
-
   return (
     <>
       {/* Modal Principale - Mobile Responsive */}
@@ -511,7 +467,6 @@ export default function ImageManager({
                   <span className="font-medium">Richiesta:</span> {requestId}
                 </p>
                 <p className="text-xs sm:text-sm text-slate-400">
-                  {/* 🚨 AGGIORNATO: Testo con limite 20MB */}
                   <span className="font-medium">Limite:</span> 20MB per file, formati JPEG/PNG/GIF/WebP
                 </p>
               </div>
@@ -597,7 +552,6 @@ export default function ImageManager({
                   <p className="text-slate-400 mb-4 text-sm">
                     Trascina le immagini qui o clicca per selezionare
                   </p>
-                  {/* 🚨 AGGIORNATO: Testo helper con 20MB */}
                   <p className="text-xs text-slate-500 mb-4">
                     Massimo 20MB per file • JPEG, PNG, GIF, WebP
                   </p>
@@ -667,7 +621,7 @@ export default function ImageManager({
               </div>
             )}
 
-            {/* Griglia Immagini - Mobile Responsive */}
+            {/* 🎯 NUOVA GRIGLIA SEMPLIFICATA - Solo Anteprime + Pulsante Elimina */}
             {isLoading ? (
               <div className="text-center py-12 sm:py-16">
                 <Loader2 className="h-6 sm:h-8 w-6 sm:w-8 animate-spin mx-auto mb-4 text-blue-500" />
@@ -682,8 +636,7 @@ export default function ImageManager({
                       <img
                         src={image.url}
                         alt={`Immagine ${index + 1}`}
-                        className="w-full h-full object-cover cursor-pointer transition-transform duration-200 group-hover:scale-105"
-                        onClick={() => openImageModal(index)}
+                        className="w-full h-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -696,25 +649,16 @@ export default function ImageManager({
                         <ImageIcon className="h-6 sm:h-8 w-6 sm:w-8 text-slate-400" />
                       </div>
 
-                      {/* Overlay azioni - Mobile Friendly */}
+                      {/* Overlay con solo pulsante elimina */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <div className="flex gap-1 sm:gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => openImageModal(index)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white border-0 shadow-lg p-1.5 sm:p-2"
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={() => handleDeleteImage(image.id, image.name)}
-                            variant="destructive"
-                            className="bg-red-600 hover:bg-red-700 shadow-lg p-1.5 sm:p-2"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => handleDeleteImage(image.id, image.name)}
+                          variant="destructive"
+                          className="bg-red-600 hover:bg-red-700 shadow-lg p-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
 
                       {/* Numero immagine */}
@@ -770,125 +714,6 @@ export default function ImageManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Modal Immagine Ingrandita - Mobile Responsive */}
-      {isImageModalOpen && images.length > 0 && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-95">
-          <div className="absolute inset-0" onClick={() => setIsImageModalOpen(false)}></div>
-          
-          <div className="relative z-10 max-w-[95vw] max-h-[95vh] p-2 sm:p-4">
-            {/* Pulsante chiudi - Mobile Friendly */}
-            <button
-              onClick={() => setIsImageModalOpen(false)}
-              className="absolute -top-4 sm:-top-6 -right-4 sm:-right-6 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 sm:p-3 rounded-full transition-all z-30 backdrop-blur-sm shadow-lg"
-              title="Chiudi (ESC)"
-            >
-              <X className="h-4 sm:h-5 w-4 sm:w-5" />
-            </button>
-            
-            <div className="relative group">
-              <img
-                src={images[selectedImageIndex]?.url}
-                alt={`Immagine ${selectedImageIndex + 1} di ${images.length}`}
-                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-              />
-              
-              {/* Controlli navigazione - Mobile Optimized */}
-              {images.length > 1 && (
-                <>
-                  {/* Zone cliccabili invisibili per navigazione */}
-                  <div 
-                    onClick={() => setSelectedImageIndex(prev => 
-                      prev === 0 ? images.length - 1 : prev - 1
-                    )}
-                    className="absolute left-0 top-0 w-1/3 h-full cursor-pointer z-10"
-                    title="Immagine precedente (←)"
-                  />
-                  
-                  <div 
-                    onClick={() => setSelectedImageIndex(prev => 
-                      prev === images.length - 1 ? 0 : prev + 1
-                    )}
-                    className="absolute right-0 top-0 w-1/3 h-full cursor-pointer z-10"
-                    title="Immagine successiva (→)"
-                  />
-
-                  {/* Pulsanti navigazione visibili - Mobile Responsive */}
-                  <button
-                    onClick={() => setSelectedImageIndex(prev => 
-                      prev === 0 ? images.length - 1 : prev - 1
-                    )}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
-                    title="Immagine precedente (←)"
-                  >
-                    <ArrowLeft className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </button>
-                  
-                  <button
-                    onClick={() => setSelectedImageIndex(prev => 
-                      prev === images.length - 1 ? 0 : prev + 1
-                    )}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20"
-                    title="Immagine successiva (→)"
-                  >
-                    <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
-                  </button>
-                  
-                  {/* Indicatori numerici - Mobile Responsive */}
-                  <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
-                    {images.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImageIndex(index)}
-                        className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full transition-all ${
-                          index === selectedImageIndex
-                            ? 'bg-white scale-110'
-                            : 'bg-white bg-opacity-40 hover:bg-opacity-60'
-                        }`}
-                        title={`Vai all'immagine ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            
-            {/* Info immagine corrente - Mobile Responsive */}
-            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-white text-center backdrop-blur-sm">
-              <div className="text-xs sm:text-sm font-medium">
-                Immagine {selectedImageIndex + 1} di {images.length}
-              </div>
-              <div className="text-xs text-gray-300 mt-1">
-                ID: {images[selectedImageIndex]?.id} • {images[selectedImageIndex]?.name}
-              </div>
-            </div>
-            
-            {/* Istruzioni controlli - Mobile Responsive */}
-            {images.length > 1 && (
-              <div className="absolute top-4 sm:top-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-white text-xs backdrop-blur-sm">
-                <div>← → per navigare</div>
-                <div>ESC per chiudere</div>
-                <div className="hidden sm:block">Click sui lati per cambiare</div>
-              </div>
-            )}
-
-            {/* Pulsante download - Mobile Responsive */}
-            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-black bg-opacity-50 rounded-lg backdrop-blur-sm">
-              <a
-                href={images[selectedImageIndex]?.url}
-                download={images[selectedImageIndex]?.name}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 text-white hover:bg-white hover:bg-opacity-20 transition-colors rounded-lg"
-                title="Scarica immagine"
-              >
-                <Download className="h-3 sm:h-4 w-3 sm:w-4" />
-                <span className="text-xs hidden sm:inline">Scarica</span>
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Componente di conferma elegante */}
       <ConfirmationComponent />

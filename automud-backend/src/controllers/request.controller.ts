@@ -103,33 +103,48 @@ export const getRequest: RequestHandler = async (req: Request, res: Response): P
       return;
     }
 
-    // ✅ Recupera dati correlati con gestione errori sicura
+    // ✅ Recupera dati correlati con gestione NULL sicura
     let statusHistory: RequestStatusRecord[] = [];
     let management: RequestManagementRecord | null = null;
     let offers: RequestOfferRecord[] = [];
 
     try {
-      // Prova a recuperare lo storico stati
+      // 🎯 SEMPRE ritorna un management (anche se con defaults)
+      management = await getManagementByRequestId(id);
+      console.log(`✅ Management loaded with defaults if needed`);
+    } catch (error) {
+      console.warn(`⚠️ Could not load management: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // 🎯 Fallback con defaults
+      management = {
+        RequestId: id,
+        Notes: '',
+        RangeMin: 0,
+        RangeMax: 0,
+        RegistrationCost: 0,
+        TransportCost: 0,
+        PurchasePrice: 0,
+        SalePrice: 0,
+        RequestCloseReason: 0,
+        FinalOutcome: undefined
+      };
+    }
+
+    try {
+      // 🎯 SEMPRE ritorna almeno uno stato (default "Da chiamare")
       statusHistory = await getStatusHistoryByRequestId(id);
       console.log(`✅ Status history loaded: ${statusHistory.length} records`);
     } catch (error) {
       console.warn(`⚠️ Could not load status history: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      // Crea uno stato di default se la tabella non esiste
+      // 🎯 Fallback con stato default
       statusHistory = [{
-        Id: 1,
+        Id: 0,
         RequestId: id,
         Status: 10, // Da chiamare
-        ChangeDate: request.DateTime
+        ChangeDate: request.DateTime,
+        Notes: undefined,
+        FinalOutcome: undefined,
+        CloseReason: undefined
       }];
-    }
-
-    try {
-      // Prova a recuperare i dati di management
-      management = await getManagementByRequestId(id);
-      console.log(`✅ Management loaded: ${management ? 'found' : 'not found'}`);
-    } catch (error) {
-      console.warn(`⚠️ Could not load management: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      management = null;
     }
 
     try {
@@ -141,17 +156,24 @@ export const getRequest: RequestHandler = async (req: Request, res: Response): P
       offers = [];
     }
 
-    // Costruisce la risposta completa
+    // 🎯 Costruisce la risposta completa con tutti i dati SEMPRE presenti
     const completeRequest = {
       ...request,
-      Management: management || undefined,
+      Management: management, // ✅ SEMPRE presente (mai null)
       Offers: offers,
-      StatusHistory: statusHistory,
-      CurrentStatus: statusHistory.length > 0 ? statusHistory[statusHistory.length - 1] : undefined
+      StatusHistory: statusHistory, // ✅ SEMPRE almeno 1 elemento
+      CurrentStatus: statusHistory.length > 0 ? statusHistory[statusHistory.length - 1] : {
+        Id: 0,
+        RequestId: id,
+        Status: 10,
+        ChangeDate: request.DateTime,
+        Notes: undefined
+      }
     };
 
-    console.log(`✅ Complete request assembled: ${id}`);
+    console.log(`✅ Complete request assembled with NULL-safe defaults: ${id}`);
     res.status(200).json(completeRequest);
+    
   } catch (error) {
     console.error('❌ Errore nel recupero richiesta completa:', error);
     res.status(500).json({ 
