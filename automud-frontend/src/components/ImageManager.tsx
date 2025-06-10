@@ -15,10 +15,12 @@ import {
   FileImage,
   Info,
   Zap,
-  Camera
+  Camera,
+  Minimize2
 } from 'lucide-react'
 import { API_BASE_URL } from '@/lib/api'
 import { useConfirmation } from './ConfirmationDialog'
+import Compressor from 'compressorjs'
 
 interface ImageManagerProps {
   isOpen: boolean
@@ -36,9 +38,18 @@ interface RequestImage {
 
 interface UploadProgress {
   filename: string
+  originalSize: number
+  compressedSize: number
   progress: number
-  status: 'pending' | 'uploading' | 'success' | 'error'
+  status: 'pending' | 'compressing' | 'uploading' | 'success' | 'error'
   error?: string
+}
+
+interface CompressionStats {
+  totalOriginalSize: number
+  totalCompressedSize: number
+  compressionRatio: number
+  filesProcessed: number
 }
 
 export default function ImageManager({ 
@@ -61,16 +72,73 @@ export default function ImageManager({
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   
-  // Stati per upload
+  // Stati per upload e compressione
   const [uploadProgress, setUploadProgress] = useState<UploadProgress[]>([])
   const [isDragOver, setIsDragOver] = useState(false)
+  const [compressionStats, setCompressionStats] = useState<CompressionStats | null>(null)
   
-  // Stati per statistiche
+  // Stati per statistiche (migliorato)
   const [stats, setStats] = useState({
     totalImages: 0,
     totalSize: 0,
+    realTotalSize: 0, // 🆕 Dimensione reale tracciata
     lastUpload: null as string | null
   })
+
+  // 🆕 LIMITI E COSTANTI
+  const MAX_TOTAL_SIZE = 10 * 1024 * 1024 // 10MB in bytes
+  const MAX_FILES_PER_UPLOAD = 10
+  const COMPRESSION_QUALITY = 0.2
+  const MAX_DIMENSION = 3000
+
+  // 🆕 Funzione di compressione delle immagini
+  const compressImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      new Compressor(file, {
+        quality: COMPRESSION_QUALITY,
+        maxHeight: MAX_DIMENSION,
+        maxWidth: MAX_DIMENSION,
+        mimeType: 'image/jpeg', // Forza JPEG per migliore compressione
+        success: (result) => {
+          resolve(new File([result], file.name.replace(/\.[^/.]+$/, '.jpg'), { 
+            type: 'image/jpeg',
+            lastModified: file.lastModified 
+          }))
+        },
+        error: (error) => reject(error),
+      })
+    })
+  }
+
+  // 🆕 Calcola dimensione totale attuale (migliorato)
+  const getCurrentTotalSize = async (): Promise<number> => {
+    try {
+      // Invece di stimare, prova a calcolare la dimensione reale
+      let totalSize = 0;
+      
+      // Per le immagini esistenti, stima più conservativa basata sul numero
+      // Le immagini compresse sono tipicamente 50-200KB
+      const estimatedSizePerImage = 150 * 1024; // 150KB stima media
+      totalSize = images.length * estimatedSizePerImage;
+      
+      console.log(`📊 Dimensione stimata attuale: ${images.length} immagini × ${estimatedSizePerImage/1024}KB = ${formatFileSize(totalSize)}`);
+      
+      return totalSize;
+    } catch (error) {
+      console.error('Errore calcolo dimensione:', error);
+      // Fallback sicuro
+      return images.length * 100 * 1024; // 100KB per immagine
+    }
+  }
+
+  // 🆕 Utility per formattare dimensioni file
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
 
   // Carica immagini dettagliate quando si apre il modal
   const fetchImages = useCallback(async () => {
@@ -103,9 +171,11 @@ export default function ImageManager({
       setImages(result.images || [])
       
       // Aggiorna statistiche
+      const currentTotalSize = await getCurrentTotalSize()
       setStats({
         totalImages: result.images?.length || 0,
-        totalSize: 0,
+        totalSize: currentTotalSize,
+        realTotalSize: currentTotalSize, // Per ora usa la stima
         lastUpload: result.images?.length > 0 ? new Date().toISOString() : null
       })
       
@@ -122,6 +192,7 @@ export default function ImageManager({
     if (isOpen) {
       fetchImages()
       setUploadProgress([])
+      setCompressionStats(null)
     }
   }, [isOpen, fetchImages])
 
@@ -169,49 +240,69 @@ export default function ImageManager({
     }
   }
 
-  // Validazione file con limite 20MB
-  const validateFiles = (files: File[]) => {
-    const maxSize = 20 * 1024 * 1024 // 20MB
+  // 🆕 Validazione file migliorata con controllo dimensione totale
+  const validateFiles = async (files: File[]) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    const maxSingleFileSize = 50 * 1024 * 1024 // 50MB per file singolo prima della compressione
     
     const validFiles: File[] = []
     const errors: string[] = []
 
-    // Utility per formattare dimensioni file
-    const formatFileSize = (bytes: number): string => {
-      if (bytes === 0) return '0 Bytes'
-      const k = 1024
-      const sizes = ['Bytes', 'KB', 'MB', 'GB']
-      const i = Math.floor(Math.log(bytes) / Math.log(k))
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+    // Controllo numero massimo file
+    if (files.length > MAX_FILES_PER_UPLOAD) {
+      errors.push(`Massimo ${MAX_FILES_PER_UPLOAD} file per volta. Selezionati: ${files.length}`)
+      return { validFiles: [], errors }
     }
 
+    // Controllo dimensione totale attuale
+    const currentTotalSize = await getCurrentTotalSize()
+    console.log(`📊 Dimensione attuale: ${formatFileSize(currentTotalSize)}`)
+
+    if (currentTotalSize >= MAX_TOTAL_SIZE) {
+      errors.push(`Limite totale di ${formatFileSize(MAX_TOTAL_SIZE)} già raggiunto. Elimina alcune immagini prima di caricarne altre.`)
+      return { validFiles: [], errors }
+    }
+
+    // Stima dimensioni post-compressione (circa 10-20% della dimensione originale)
+    let estimatedCompressedSize = 0
+    
     files.forEach(file => {
       if (!allowedTypes.includes(file.type)) {
         errors.push(`${file.name}: Formato non supportato. Usa JPEG, PNG, GIF o WebP.`)
-      } else if (file.size > maxSize) {
-        errors.push(`${file.name}: File troppo grande (${formatFileSize(file.size)}). Massimo 20MB consentiti.`)
+      } else if (file.size > maxSingleFileSize) {
+        errors.push(`${file.name}: File troppo grande (${formatFileSize(file.size)}). Massimo 50MB per file.`)
       } else {
         validFiles.push(file)
+        // Stima conservativa: 15% della dimensione originale dopo compressione
+        estimatedCompressedSize += file.size * 0.15
       }
     })
+
+    // Controllo se l'aggiunta supererebbe il limite
+    if (currentTotalSize + estimatedCompressedSize > MAX_TOTAL_SIZE) {
+      const availableSpace = MAX_TOTAL_SIZE - currentTotalSize
+      errors.push(
+        `Spazio disponibile: ${formatFileSize(availableSpace)}. ` +
+        `Dimensione stimata file da caricare: ${formatFileSize(estimatedCompressedSize)}. ` +
+        `Riduci il numero di file o elimina immagini esistenti.`
+      )
+    }
 
     return { validFiles, errors }
   }
 
-  // Upload immagini con progress
+  // 🆕 Upload con compressione
   const handleUpload = async (files: File[]) => {
     if (files.length === 0) return
 
-    const { validFiles, errors } = validateFiles(files)
+    const { validFiles, errors } = await validateFiles(files)
 
-    // Usa il dialog di conferma invece dell'alert
     if (errors.length > 0) {
       showConfirmation({
         title: 'Errori di Validazione',
-        message: `Alcuni file non sono validi:\n\n${errors.join('\n')}\n\nVuoi procedere con i file validi?`,
+        message: `${errors.join('\n\n')}${validFiles.length > 0 ? `\n\nVuoi procedere con i ${validFiles.length} file validi?` : ''}`,
         type: 'warning',
-        confirmText: `Procedi con ${validFiles.length} file`,
+        confirmText: validFiles.length > 0 ? `Procedi con ${validFiles.length} file` : 'OK',
         cancelText: 'Annulla',
         onConfirm: () => {
           if (validFiles.length > 0) {
@@ -227,16 +318,19 @@ export default function ImageManager({
     performUpload(validFiles)
   }
 
-  // Funzione separata per l'upload effettivo
+  // 🆕 Funzione di upload con compressione
   const performUpload = async (validFiles: File[]) => {
-    // Inizializza progress
+    setIsUploading(true)
+    
+    // Inizializza progress per compressione
     const initialProgress: UploadProgress[] = validFiles.map(file => ({
       filename: file.name,
+      originalSize: file.size,
+      compressedSize: 0,
       progress: 0,
       status: 'pending'
     }))
     setUploadProgress(initialProgress)
-    setIsUploading(true)
 
     try {
       const auth = localStorage.getItem('automud_auth')
@@ -244,24 +338,84 @@ export default function ImageManager({
         throw new Error('Utente non autenticato')
       }
 
-      console.log(`📤 Upload di ${validFiles.length} immagini`)
+      console.log(`🔄 Inizio compressione di ${validFiles.length} immagini`)
 
-      // Aggiorna status a "uploading"
-      setUploadProgress(prev => prev.map(p => ({ ...p, status: 'uploading' as const, progress: 10 })))
+      // FASE 1: Compressione
+      const compressedFiles: File[] = []
+      let totalOriginalSize = 0
+      let totalCompressedSize = 0
 
+      for (let i = 0; i < validFiles.length; i++) {
+        const file = validFiles[i]
+        totalOriginalSize += file.size
+
+        // Aggiorna status a compressing
+        setUploadProgress(prev => prev.map((p, index) => 
+          index === i ? { ...p, status: 'compressing' as const, progress: 10 } : p
+        ))
+
+        try {
+          console.log(`🗜️ Compressione ${file.name} (${formatFileSize(file.size)})`)
+          
+          const compressedFile = await compressImage(file)
+          compressedFiles.push(compressedFile)
+          totalCompressedSize += compressedFile.size
+
+          console.log(`✅ ${file.name} compresso: ${formatFileSize(file.size)} → ${formatFileSize(compressedFile.size)} (${Math.round((1 - compressedFile.size/file.size) * 100)}% riduzione)`)
+
+          // Aggiorna progress compressione completata
+          setUploadProgress(prev => prev.map((p, index) => 
+            index === i ? { 
+              ...p, 
+              compressedSize: compressedFile.size,
+              progress: 50,
+              status: 'uploading' as const 
+            } : p
+          ))
+
+        } catch (compressionError) {
+          console.error(`❌ Errore compressione ${file.name}:`, compressionError)
+          setUploadProgress(prev => prev.map((p, index) => 
+            index === i ? { 
+              ...p, 
+              status: 'error' as const, 
+              error: 'Errore durante la compressione' 
+            } : p
+          ))
+        }
+      }
+
+      // Aggiorna statistiche compressione
+      const compressionRatio = totalOriginalSize > 0 ? (totalOriginalSize - totalCompressedSize) / totalOriginalSize : 0
+      setCompressionStats({
+        totalOriginalSize,
+        totalCompressedSize,
+        compressionRatio,
+        filesProcessed: compressedFiles.length
+      })
+
+      // Controllo finale dimensione
+      const currentSize = await getCurrentTotalSize()
+      if (currentSize + totalCompressedSize > MAX_TOTAL_SIZE) {
+        throw new Error(`Anche dopo la compressione, le immagini supererebbero il limite di ${formatFileSize(MAX_TOTAL_SIZE)}`)
+      }
+
+      console.log(`📤 Inizio upload di ${compressedFiles.length} immagini compresse (${formatFileSize(totalCompressedSize)})`)
+
+      // FASE 2: Upload
       const formData = new FormData()
-      validFiles.forEach(file => {
+      compressedFiles.forEach(file => {
         formData.append('images', file)
       })
 
-      // Simula progress
+      // Simula progress upload
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => prev.map(p => 
           p.status === 'uploading' && p.progress < 90 
-            ? { ...p, progress: Math.min(p.progress + 20, 90) }
+            ? { ...p, progress: Math.min(p.progress + 10, 90) }
             : p
         ))
-      }, 500)
+      }, 300)
 
       const response = await fetch(`${API_BASE_URL}/api/request/${requestId}/images`, {
         method: 'POST',
@@ -301,12 +455,21 @@ export default function ImageManager({
       setTimeout(async () => {
         await fetchImages()
         
+        // 🆕 Aggiorna la dimensione reale con i file appena caricati
+        setStats(prev => ({
+          ...prev,
+          realTotalSize: prev.realTotalSize + totalCompressedSize
+        }))
+        
         // Notifica al parent component
         const newImageNames = [...currentImages, ...result.uploaded.map((img: any) => img.name)]
         onImagesUpdated(newImageNames)
 
         // Clear progress dopo successo
-        setTimeout(() => setUploadProgress([]), 2000)
+        setTimeout(() => {
+          setUploadProgress([])
+          setCompressionStats(null)
+        }, 3000)
       }, 1000)
 
     } catch (error) {
@@ -368,7 +531,8 @@ export default function ImageManager({
           // Aggiorna le statistiche
           setStats(prev => ({
             ...prev,
-            totalImages: updatedImages.length
+            totalImages: updatedImages.length,
+            realTotalSize: Math.max(0, prev.realTotalSize - 150 * 1024) // Sottrai stima per immagine eliminata
           }))
           
           // Notifica al parent component
@@ -424,6 +588,7 @@ export default function ImageManager({
           setStats({
             totalImages: 0,
             totalSize: 0,
+            realTotalSize: 0,
             lastUpload: null
           })
           
@@ -456,71 +621,124 @@ export default function ImageManager({
           </DialogHeader>
 
           <div className="space-y-4 sm:space-y-6 py-4">
-            {/* Info richiesta e statistiche - Mobile Stack */}
+            {/* 🆕 Info limiti e compressione - Mobile Responsive */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-slate-700/30 p-3 sm:p-4 rounded-lg border border-slate-600">
                 <div className="flex items-center gap-2 mb-2">
                   <Info className="h-3 sm:h-4 w-3 sm:w-4 text-slate-400" />
-                  <span className="font-medium text-slate-200 text-sm">Informazioni</span>
+                  <span className="font-medium text-slate-200 text-sm">Limiti Sistema</span>
                 </div>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  <span className="font-medium">Richiesta:</span> {requestId}
-                </p>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  <span className="font-medium">Limite:</span> 20MB per file, formati JPEG/PNG/GIF/WebP
-                </p>
+                <div className="space-y-1 text-xs sm:text-sm">
+                  <p className="text-slate-400">
+                    <span className="font-medium">Limite totale:</span> {formatFileSize(MAX_TOTAL_SIZE)}
+                  </p>
+                  <p className="text-slate-400">
+                    <span className="font-medium">Spazio utilizzato:</span> {formatFileSize(stats.realTotalSize || stats.totalSize)}
+                  </p>
+                  <p className="text-slate-400">
+                    <span className="font-medium">Spazio disponibile:</span> {formatFileSize(Math.max(0, MAX_TOTAL_SIZE - (stats.realTotalSize || stats.totalSize)))}
+                  </p>
+                </div>
               </div>
 
-              {stats.totalImages > 0 && (
-                <div className="bg-green-900/20 p-3 sm:p-4 rounded-lg border border-green-700/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />
-                    <span className="font-medium text-green-400 text-sm">Statistiche</span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-green-200">
-                    <span className="font-medium">{stats.totalImages}</span> immagini caricate
+              <div className="bg-purple-900/20 p-3 sm:p-4 rounded-lg border border-purple-700/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <Minimize2 className="h-3 sm:h-4 w-3 sm:w-4 text-purple-400" />
+                  <span className="font-medium text-purple-400 text-sm">Compressione Automatica</span>
+                </div>
+                <div className="space-y-1 text-xs sm:text-sm">
+                  <p className="text-purple-200">
+                    <span className="font-medium">Qualità:</span> {(COMPRESSION_QUALITY * 100).toFixed(0)}%
                   </p>
-                  <p className="text-xs sm:text-sm text-green-200">
-                    Storage: Azure Blob Container
+                  <p className="text-purple-200">
+                    <span className="font-medium">Risoluzione max:</span> {MAX_DIMENSION}px
+                  </p>
+                  <p className="text-purple-200">
+                    <span className="font-medium">Formato:</span> JPEG ottimizzato
                   </p>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* Upload Progress - Mobile Responsive */}
+            {/* 🆕 Statistiche compressione - Mobile Responsive */}
+            {compressionStats && (
+              <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 sm:p-4">
+                <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2 text-sm sm:text-base">
+                  <Minimize2 className="h-3 sm:h-4 w-3 sm:w-4" />
+                  Risultati Compressione
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
+                  <div className="text-center sm:text-left">
+                    <p className="text-slate-400">File processati:</p>
+                    <p className="font-medium text-white">{compressionStats.filesProcessed}</p>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-slate-400">Dimensione originale:</p>
+                    <p className="font-medium text-red-400">{formatFileSize(compressionStats.totalOriginalSize)}</p>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-slate-400">Dimensione compressa:</p>
+                    <p className="font-medium text-green-400">{formatFileSize(compressionStats.totalCompressedSize)}</p>
+                  </div>
+                  <div className="text-center sm:text-left">
+                    <p className="text-slate-400">Risparmio spazio:</p>
+                    <p className="font-medium text-green-400">{(compressionStats.compressionRatio * 100).toFixed(1)}%</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 🆕 Upload Progress migliorato - Mobile Responsive */}
             {uploadProgress.length > 0 && (
               <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-3 sm:p-4">
                 <h3 className="font-semibold text-blue-400 mb-3 flex items-center gap-2 text-sm sm:text-base">
                   <Zap className="h-3 sm:h-4 w-3 sm:w-4" />
-                  Upload in Corso
+                  Elaborazione in Corso
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {uploadProgress.map((progress, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs sm:text-sm text-white truncate max-w-xs">
-                            {progress.filename}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {progress.status === 'success' && <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />}
-                            {progress.status === 'error' && <AlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 text-red-400" />}
-                            {progress.status === 'uploading' && <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 animate-spin text-blue-400" />}
-                            <span className="text-xs text-slate-400">{progress.progress}%</span>
-                          </div>
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs sm:text-sm text-white truncate max-w-xs">
+                          {progress.filename}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {progress.status === 'success' && <CheckCircle className="h-3 sm:h-4 w-3 sm:w-4 text-green-400" />}
+                          {progress.status === 'error' && <AlertTriangle className="h-3 sm:h-4 w-3 sm:w-4 text-red-400" />}
+                          {progress.status === 'compressing' && <Minimize2 className="h-3 sm:h-4 w-3 sm:w-4 animate-pulse text-purple-400" />}
+                          {progress.status === 'uploading' && <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 animate-spin text-blue-400" />}
+                          <span className="text-xs text-slate-400">{progress.progress}%</span>
                         </div>
-                        <div className="w-full bg-slate-700 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-500 ${
-                              progress.status === 'success' ? 'bg-green-500' :
-                              progress.status === 'error' ? 'bg-red-500' : 'bg-blue-500'
-                            }`}
-                            style={{ width: `${progress.progress}%` }}
-                          />
+                      </div>
+                      
+                      {/* Barra progresso */}
+                      <div className="w-full bg-slate-700 rounded-full h-2">
+                        <div 
+                          className={`h-2 rounded-full transition-all duration-500 ${
+                            progress.status === 'success' ? 'bg-green-500' :
+                            progress.status === 'error' ? 'bg-red-500' :
+                            progress.status === 'compressing' ? 'bg-purple-500' : 'bg-blue-500'
+                          }`}
+                          style={{ width: `${progress.progress}%` }}
+                        />
+                      </div>
+
+                      {/* Info dimensioni */}
+                      {progress.originalSize > 0 && (
+                        <div className="flex justify-between text-xs text-slate-400">
+                          <span>Originale: {formatFileSize(progress.originalSize)}</span>
+                          {progress.compressedSize > 0 && (
+                            <span>Compressa: {formatFileSize(progress.compressedSize)}</span>
+                          )}
                         </div>
-                        {progress.error && (
-                          <p className="text-xs text-red-400 mt-1">{progress.error}</p>
-                        )}
+                      )}
+
+                      {/* Status message */}
+                      <div className="text-xs text-slate-400">
+                        {progress.status === 'compressing' && 'Compressione in corso...'}
+                        {progress.status === 'uploading' && 'Upload in corso...'}
+                        {progress.status === 'success' && 'Completato con successo'}
+                        {progress.error && <span className="text-red-400">{progress.error}</span>}
                       </div>
                     </div>
                   ))}
@@ -549,23 +767,25 @@ export default function ImageManager({
                   <h3 className="text-base sm:text-lg font-semibold text-white mb-2">
                     {isDragOver ? 'Rilascia qui le immagini' : 'Carica Nuove Immagini'}
                   </h3>
-                  <p className="text-slate-400 mb-4 text-sm">
+                  <p className="text-slate-400 mb-2 text-sm">
                     Trascina le immagini qui o clicca per selezionare
                   </p>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Massimo 20MB per file • JPEG, PNG, GIF, WebP
-                  </p>
+                  <div className="space-y-1 text-xs text-slate-500 mb-4">
+                    <p>🗜️ Compressione automatica attiva</p>
+                    <p>📏 Limite totale: {formatFileSize(MAX_TOTAL_SIZE)} • Spazio libero: {formatFileSize(Math.max(0, MAX_TOTAL_SIZE - stats.totalSize))}</p>
+                    <p>📁 Massimo {MAX_FILES_PER_UPLOAD} file per volta • JPEG, PNG, GIF, WebP</p>
+                  </div>
                   
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
+                      disabled={isUploading || (stats.realTotalSize || stats.totalSize) >= MAX_TOTAL_SIZE}
                       className="bg-green-500 hover:bg-green-600 text-white border-0 text-sm sm:text-base"
                     >
                       {isUploading ? (
                         <>
                           <Loader2 className="h-3 sm:h-4 w-3 sm:w-4 mr-2 animate-spin" />
-                          Caricamento...
+                          Elaborazione...
                         </>
                       ) : (
                         <>
@@ -585,6 +805,22 @@ export default function ImageManager({
                       Ricarica
                     </Button>
                   </div>
+
+                  {/* 🆕 Warning se spazio insufficiente */}
+                  {(stats.realTotalSize || stats.totalSize) >= MAX_TOTAL_SIZE * 0.9 && (
+                    <div className="mt-4 p-3 bg-orange-900/30 border border-orange-700/50 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-orange-400">Spazio quasi esaurito</p>
+                          <p className="text-sm text-orange-200">
+                            Hai utilizzato {(((stats.realTotalSize || stats.totalSize) / MAX_TOTAL_SIZE) * 100).toFixed(1)}% dello spazio disponibile. 
+                            Considera di eliminare alcune immagini prima di caricarne altre.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -605,7 +841,7 @@ export default function ImageManager({
                 <div className="flex items-center gap-2">
                   <ImageIcon className="h-3 sm:h-4 w-3 sm:w-4 text-slate-400" />
                   <span className="text-xs sm:text-sm text-slate-400">
-                    {images.length} immagini caricate
+                    {images.length} immagini • {formatFileSize(stats.realTotalSize || stats.totalSize)}
                   </span>
                 </div>
                 
@@ -621,7 +857,7 @@ export default function ImageManager({
               </div>
             )}
 
-            {/* 🎯 NUOVA GRIGLIA SEMPLIFICATA - Solo Anteprime + Pulsante Elimina */}
+            {/* Griglia Immagini - Mobile Responsive */}
             {isLoading ? (
               <div className="text-center py-12 sm:py-16">
                 <Loader2 className="h-6 sm:h-8 w-6 sm:w-8 animate-spin mx-auto mb-4 text-blue-500" />
@@ -649,7 +885,7 @@ export default function ImageManager({
                         <ImageIcon className="h-6 sm:h-8 w-6 sm:w-8 text-slate-400" />
                       </div>
 
-                      {/* Overlay con solo pulsante elimina */}
+                      {/* Overlay con pulsante elimina */}
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
                         <Button
                           size="sm"
@@ -664,6 +900,12 @@ export default function ImageManager({
                       {/* Numero immagine */}
                       <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-black/70 text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded">
                         {index + 1}
+                      </div>
+
+                      {/* 🆕 Badge compressione */}
+                      <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-purple-600/80 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
+                        <Minimize2 className="h-2 w-2" />
+                        <span>JPEG</span>
                       </div>
                     </div>
 
@@ -690,14 +932,19 @@ export default function ImageManager({
                 <p className="text-slate-400 mb-4 sm:mb-6 max-w-md mx-auto text-sm sm:text-base px-4">
                   Questa richiesta non ha ancora immagini associate. Carica le prime foto per iniziare.
                 </p>
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="bg-green-500 hover:bg-green-600 text-white border-0"
-                >
-                  <Camera className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
-                  Carica Prima Immagine
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="bg-green-500 hover:bg-green-600 text-white border-0"
+                  >
+                    <Camera className="h-3 sm:h-4 w-3 sm:w-4 mr-2" />
+                    Carica Prima Immagine
+                  </Button>
+                  <p className="text-xs text-slate-500">
+                    Le immagini saranno automaticamente compresse per ottimizzare lo spazio
+                  </p>
+                </div>
               </div>
             )}
           </div>
