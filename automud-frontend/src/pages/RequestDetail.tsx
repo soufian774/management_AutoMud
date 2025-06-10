@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { 
@@ -41,6 +41,7 @@ import ImageManager from '@/components/ImageManager'
 
 export default function RequestDetail() {
   const { requestId } = useParams<{ requestId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
   // Stati per gestire i dati
@@ -67,7 +68,7 @@ export default function RequestDetail() {
   const [expandedSections, setExpandedSections] = useState({
     gallery: true,
     vehicle: false,
-    valuation: false,
+    economic: false,
     offers: false,
     notes: false
   })
@@ -90,7 +91,16 @@ export default function RequestDetail() {
 
   // Gestione tasto indietro
   const handleBack = () => {
-    navigate('/dashboard')
+    //Legge il parametro page dall'URL
+    const returnPage = searchParams.get('page')
+    
+    if (returnPage) {
+      // Se c'è una pagina specifica, torna a quella
+      navigate(`/dashboard?page=${returnPage}`)
+    } else {
+      // Altrimenti torna alla prima pagina
+      navigate('/dashboard')
+    }
   }
 
   // Funzione di logout
@@ -687,6 +697,14 @@ export default function RequestDetail() {
                         <Calendar className="h-3 w-3 text-slate-400" />
                         <span className="text-white text-xs">{formatDate(request.DateTime)}</span>
                       </div>
+                      {/* 🆕 AGGIUNTO: Prezzo Desiderato Cliente */}
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="h-3 w-3 text-slate-400" />
+                        <span className="font-semibold text-green-400">
+                          €{request.DesiredPrice.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-slate-500">(prezzo desiderato)</span>
+                      </div>
                     </div>
                   </div>
 
@@ -759,35 +777,23 @@ export default function RequestDetail() {
             {/* Valutazione Mobile */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
-                onClick={() => toggleSection('valuation')}
+                onClick={() => toggleSection('economic')}
                 className="w-full p-4 flex items-center justify-between text-white hover:bg-slate-700/30 transition-colors touch-manipulation"
               >
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  <span className="font-semibold">Valutazione & Prezzi</span>
+                    <DollarSign className="h-4 w-4" />
+                  <span className="font-semibold">Gestione Economica</span>
                 </div>
-                {expandedSections.valuation ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  {expandedSections.economic ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               
-              {expandedSections.valuation && (
+              {expandedSections.economic && (
                 <div className="p-4 pt-0 space-y-4">
-                  {/* Prezzo Desiderato */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-2">
-                      Prezzo Desiderato Cliente
-                    </label>
-                    <div className="text-2xl font-bold text-green-400">
-                      €{request.DesiredPrice.toLocaleString()}
-                    </div>
-                  </div>
 
                   {/* Range Valutazione */}
                   {request.Management && (
-                    <div>
+                    <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
                       <div className="flex justify-between items-center mb-2">
-                        <label className="block text-sm font-medium text-slate-400">
-                          Range Valutazione
-                        </label>
                         <Button
                           variant="outline"
                           size="sm"
@@ -795,7 +801,7 @@ export default function RequestDetail() {
                           className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 text-xs touch-manipulation"
                         >
                           <TrendingUp className="h-3 w-3 mr-1" />
-                          Modifica
+                          Range
                         </Button>
                       </div>
                       <div className="text-lg font-semibold text-orange-400">
@@ -808,10 +814,6 @@ export default function RequestDetail() {
                   {request.Management && (
                     <div>
                       <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-semibold text-white flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-green-400" />
-                          Gestione Economica
-                        </h4>
                         <Button
                           variant="outline"
                           size="sm"
@@ -1329,6 +1331,14 @@ export default function RequestDetail() {
                       <Calendar className="h-4 w-4 text-slate-400" />
                       <span className="text-white">{formatDate(request.DateTime)}</span>
                     </div>
+                    {/* 🆕 AGGIUNTO: Prezzo Desiderato Cliente */}
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-4 w-4 text-slate-400" />
+                      <span className="font-semibold text-green-400">
+                        €{request.DesiredPrice.toLocaleString()}
+                      </span>
+                      <span className="text-sm text-slate-500">(prezzo desiderato)</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1340,108 +1350,91 @@ export default function RequestDetail() {
                 
                 {/* Valutazione */}
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
-                  <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-                    <TrendingUp className="h-5 w-5 mr-2" />
-                    Valutazione
-                  </h2>
-                  
+                 <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Gestione Economica
+                </h2>
+                {request.Management && (                  
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">
-                        Prezzo Desiderato Cliente
+                  {/* Range Valutazione */}
+                  <div className="bg-slate-700/30 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-sm font-medium text-slate-400">
+                        Range Valutazione
                       </label>
-                      <div className="text-2xl font-bold text-green-400">
-                        €{request.DesiredPrice.toLocaleString()}
-                      </div>
-                    </div>
-
-                    {request.Management && (
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="block text-sm font-medium text-slate-400">
-                            Range Valutazione
-                          </label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsRangeEditorOpen(true)}
-                            className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500 text-xs"
-                          >
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            Modifica
-                          </Button>
-                        </div>
-                        <div className="text-lg font-semibold text-orange-400">
-                          €{request.Management.RangeMin.toLocaleString()} - €{request.Management.RangeMax.toLocaleString()}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Prezzi e Costi */}
-                {request.Management && (
-                  <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
-                    <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-                      <DollarSign className="h-5 w-5 mr-2" />
-                      Gestione Economica
-                    </h2>
-                    
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm text-slate-400">Prezzo Acquisto</label>
-                          <div className="text-lg font-medium text-white">
-                            €{request.Management.PurchasePrice.toLocaleString()}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm text-slate-400">Prezzo Vendita</label>
-                          <div className="text-lg font-medium text-white">
-                            €{request.Management.SalePrice.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm text-slate-400">Costi Pratica</label>
-                          <div className="text-md text-white">
-                            €{request.Management.RegistrationCost.toLocaleString()}
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-sm text-slate-400">Costi Trasporto</label>
-                          <div className="text-md text-white">
-                            €{request.Management.TransportCost.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="pt-4 border-t border-slate-600">
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-400">Margine Stimato:</span>
-                          <span className={`text-lg font-bold ${
-                            (request.Management.SalePrice - request.Management.PurchasePrice - request.Management.RegistrationCost - request.Management.TransportCost) >= 0 
-                              ? 'text-green-400' 
-                              : 'text-red-400'
-                          }`}>
-                            €{(request.Management.SalePrice - request.Management.PurchasePrice - request.Management.RegistrationCost - request.Management.TransportCost).toLocaleString()}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Button 
+                      <Button
                         variant="outline"
-                        onClick={() => setIsPricingEditorOpen(true)}
-                        className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
+                        size="sm"
+                        onClick={() => setIsRangeEditorOpen(true)}
+                        className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500 text-xs"
                       >
-                        <DollarSign className="h-4 w-4 mr-2" />
-                        Modifica Prezzi e Costi
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Modifica Range
                       </Button>
                     </div>
+                    <div className="text-xl font-semibold text-orange-400">
+                      €{request.Management.RangeMin.toLocaleString()} - €{request.Management.RangeMax.toLocaleString()}
+                    </div>
                   </div>
+
+                  {/* Prezzi */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-slate-400">Prezzo Acquisto</label>
+                      <div className="text-lg font-medium text-white">
+                        €{request.Management.PurchasePrice.toLocaleString()}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400">Prezzo Vendita</label>
+                      <div className="text-lg font-medium text-white">
+                        €{request.Management.SalePrice.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Costi */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm text-slate-400">Costi Pratica</label>
+                      <div className="text-md text-white">
+                        €{request.Management.RegistrationCost.toLocaleString()}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm text-slate-400">Costi Trasporto</label>
+                      <div className="text-md text-white">
+                        €{request.Management.TransportCost.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Margine */}
+                  <div className="pt-4 border-t border-slate-600">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400">Margine Stimato:</span>
+                      <span className={`text-xl font-bold ${
+                        (request.Management.SalePrice - request.Management.PurchasePrice - request.Management.RegistrationCost - request.Management.TransportCost) >= 0 
+                          ? 'text-green-400' 
+                          : 'text-red-400'
+                      }`}>
+                        €{(request.Management.SalePrice - request.Management.PurchasePrice - request.Management.RegistrationCost - request.Management.TransportCost).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pulsante Modifica */}
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsPricingEditorOpen(true)}
+                    className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    Modifica Prezzi e Costi
+                  </Button>
+                </div>
                 )}
+                </div>
               </div>
             </div>
 
