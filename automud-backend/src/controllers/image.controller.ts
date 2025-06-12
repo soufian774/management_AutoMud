@@ -38,13 +38,13 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
-// Configurazione multer
+// 🆕 CONFIGURAZIONE AGGIORNATA - Nuovi limiti
 export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 20 * 1024 * 1024, // 10MB max per file
-    files: 10 // Massimo 10 file per volta
+    fileSize: 5 * 1024 * 1024, // 🆕 5MB max per file (era 20MB)
+    files: 50 // 🆕 Massimo 50 file per volta (era 10)
   }
 });
 
@@ -73,6 +73,20 @@ export const uploadImages: RequestHandler = async (req: Request, res: Response):
     const requestCheck = await pool.query('SELECT "Id" FROM "Requests" WHERE "Id" = $1', [requestId]);
     if (requestCheck.rows.length === 0) {
       res.status(404).json({ error: 'Richiesta non trovata' });
+      return;
+    }
+
+    // 🆕 CONTROLLO NUMERO MASSIMO IMMAGINI PER RICHIESTA
+    const currentImagesCheck = await pool.query(
+      'SELECT COUNT(*) as count FROM "RequestImages" WHERE "RequestId" = $1', 
+      [requestId]
+    );
+    const currentImagesCount = parseInt(currentImagesCheck.rows[0].count, 10);
+    
+    if (currentImagesCount + files.length > 50) {
+      res.status(400).json({ 
+        error: `Limite massimo raggiunto. Hai già ${currentImagesCount} immagini, stai tentando di aggiungerne ${files.length}. Massimo consentito: 50 immagini per richiesta.`
+      });
       return;
     }
 
@@ -126,7 +140,10 @@ export const uploadImages: RequestHandler = async (req: Request, res: Response):
       success: true,
       message: `${uploadedImages.length} immagini caricate con successo`,
       uploaded: uploadedImages,
-      requestId
+      requestId,
+      // 🆕 AGGIUNGI INFO SUL NUMERO TOTALE
+      totalImages: currentImagesCount + uploadedImages.length,
+      maxImages: 50
     };
 
     if (errors.length > 0) {
@@ -185,7 +202,10 @@ export const getImages: RequestHandler = async (req: Request, res: Response): Pr
       success: true,
       requestId,
       count: images.length,
-      images
+      images,
+      // 🆕 AGGIUNGI INFO LIMITI
+      maxImages: 50,
+      remainingSlots: Math.max(0, 50 - images.length)
     });
 
   } catch (error) {

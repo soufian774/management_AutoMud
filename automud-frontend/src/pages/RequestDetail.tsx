@@ -655,7 +655,7 @@ export default function RequestDetail() {
               )}
             </div>
 
-            {/* Info Cliente Mobile */}
+            {/* 🆕 Info Cliente & Veicolo Mobile - SEZIONE MODIFICATA */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('vehicle')}
@@ -697,7 +697,6 @@ export default function RequestDetail() {
                         <Calendar className="h-3 w-3 text-slate-400" />
                         <span className="text-white text-xs">{formatDate(request.DateTime)}</span>
                       </div>
-                      {/* 🆕 AGGIUNTO: Prezzo Desiderato Cliente */}
                       <div className="flex items-center gap-2">
                         <DollarSign className="h-3 w-3 text-slate-400" />
                         <span className="font-semibold text-green-400">
@@ -726,7 +725,7 @@ export default function RequestDetail() {
                       </Button>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                       <div>
                         <span className="text-slate-400">Targa:</span>
                         <div className="font-medium text-white">{request.LicensePlate}</div>
@@ -753,9 +752,9 @@ export default function RequestDetail() {
                       </div>
                     </div>
 
-                    {/* Condizioni Mobile */}
-                    <div className="mt-4 pt-4 border-t border-slate-600">
-                      <h4 className="font-semibold mb-2 text-white text-sm">Condizioni</h4>
+                    {/* Condizioni Generali - Mobile */}
+                    <div className="mb-4 pt-4 border-t border-slate-600">
+                      <h4 className="font-semibold mb-2 text-white text-sm">Condizioni Generali</h4>
                       <div className="flex gap-2">
                         <Badge 
                           className={`font-medium text-xs ${getBadgeStyles(getCarConditionColor(request.CarCondition))}`}
@@ -767,6 +766,33 @@ export default function RequestDetail() {
                         >
                           {EngineConditionEnum[request.EngineCondition]}
                         </Badge>
+                      </div>
+                    </div>
+
+                    {/* 🆕 CONDIZIONI DETTAGLIATE - SPOSTATE QUI */}
+                    <div className="pt-4 border-t border-slate-600">
+                      <h4 className="font-semibold mb-3 text-white text-sm">Condizioni Dettagliate</h4>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="text-slate-400 font-medium">Interni:</span>
+                          <p className="text-white mt-1 text-xs leading-relaxed bg-slate-700/30 p-2 rounded">
+                            {request.InteriorConditions}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 font-medium">Esterni:</span>
+                          <p className="text-white mt-1 text-xs leading-relaxed bg-slate-700/30 p-2 rounded">
+                            {request.ExteriorConditions}
+                          </p>
+                        </div>
+                        {request.MechanicalConditions && (
+                          <div>
+                            <span className="text-slate-400 font-medium">Meccaniche:</span>
+                            <p className="text-white mt-1 text-xs leading-relaxed bg-slate-700/30 p-2 rounded">
+                              {request.MechanicalConditions}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -910,7 +936,7 @@ export default function RequestDetail() {
               )}
             </div>
 
-            {/* Note e Storico Mobile */}
+            {/* 🆕 Note e Storico Mobile - SEZIONE MODIFICATA (RIMOSSE LE CONDIZIONI) */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('notes')}
@@ -925,7 +951,7 @@ export default function RequestDetail() {
               
               {expandedSections.notes && (
                 <div className="p-4 pt-0 space-y-4">
-                  {/* Note */}
+                  {/* Note di Gestione - SOLO LE NOTE */}
                   {request.Management && (
                     <div>
                       <div className="flex justify-between items-center mb-3">
@@ -944,33 +970,10 @@ export default function RequestDetail() {
                         </Button>
                       </div>
                       
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm text-slate-400 mb-2">Note:</label>
-                          <p className="text-white text-sm bg-slate-700/50 p-3 rounded">
-                            {request.Management.Notes || 'Nessuna nota disponibile'}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm text-slate-400 mb-2">Condizioni:</label>
-                          <div className="space-y-2 text-sm">
-                            <div>
-                              <span className="text-slate-400">Interni: </span>
-                              <span className="text-white">{request.InteriorConditions}</span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400">Esterni: </span>
-                              <span className="text-white">{request.ExteriorConditions}</span>
-                            </div>
-                            {request.MechanicalConditions && (
-                              <div>
-                                <span className="text-slate-400">Meccaniche: </span>
-                                <span className="text-white">{request.MechanicalConditions}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <div>
+                        <p className="text-white text-sm bg-slate-700/50 p-3 rounded">
+                          {request.Management.Notes || 'Nessuna nota disponibile'}
+                        </p>
                       </div>
                     </div>
                   )}
@@ -1228,7 +1231,7 @@ export default function RequestDetail() {
               </div>
             </div>
 
-            {/* COLONNA 2 - Dettagli Veicolo */}
+            {/* 🆕 COLONNA 2 - Dettagli Veicolo - SEZIONE MODIFICATA */}
             <div className="col-span-1">
               <div className="space-y-6">
                 
@@ -1279,9 +1282,9 @@ export default function RequestDetail() {
                     </div>
                   </div>
 
-                  {/* Condizioni */}
+                  {/* Condizioni Generali */}
                   <div className="mt-6 pt-6 border-t border-slate-600">
-                    <h3 className="font-semibold mb-3 text-white">Condizioni</h3>
+                    <h3 className="font-semibold mb-3 text-white">Condizioni Generali</h3>
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-slate-400">Generali:</span>
@@ -1300,6 +1303,35 @@ export default function RequestDetail() {
                           {EngineConditionEnum[request.EngineCondition]}
                         </Badge>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 🆕 CONDIZIONI DETTAGLIATE - SPOSTATE QUI */}
+                  <div className="mt-6 pt-6 border-t border-slate-600">
+                    <h3 className="font-semibold mb-4 text-white">Condizioni Dettagliate</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-2">Interni:</label>
+                        <p className="text-white text-sm bg-slate-700/30 p-3 rounded leading-relaxed">
+                          {request.InteriorConditions}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-2">Esterni:</label>
+                        <p className="text-white text-sm bg-slate-700/30 p-3 rounded leading-relaxed">
+                          {request.ExteriorConditions}
+                        </p>
+                      </div>
+                      
+                      {request.MechanicalConditions && (
+                        <div>
+                          <label className="block text-sm font-medium text-slate-400 mb-2">Meccaniche:</label>
+                          <p className="text-white text-sm bg-slate-700/30 p-3 rounded leading-relaxed">
+                            {request.MechanicalConditions}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1331,7 +1363,6 @@ export default function RequestDetail() {
                       <Calendar className="h-4 w-4 text-slate-400" />
                       <span className="text-white">{formatDate(request.DateTime)}</span>
                     </div>
-                    {/* 🆕 AGGIUNTO: Prezzo Desiderato Cliente */}
                     <div className="flex items-center gap-3">
                       <DollarSign className="h-4 w-4 text-slate-400" />
                       <span className="font-semibold text-green-400">
@@ -1560,40 +1591,19 @@ export default function RequestDetail() {
                   </div>
                 </div>
 
-                {/* Note */}
+                {/* 🆕 Note di Gestione - SEZIONE MODIFICATA (RIMOSSE LE CONDIZIONI) */}
                 {request.Management && (
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
                       <FileText className="h-5 w-5 mr-2" />
-                      Note
+                      Note di Gestione
                     </h2>
                     
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm text-slate-400 mb-2">Note di gestione:</label>
                         <p className="text-white text-sm bg-slate-700/50 p-3 rounded">
                           {request.Management.Notes || 'Nessuna nota disponibile'}
                         </p>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm text-slate-400 mb-2">Condizioni dettagliate:</label>
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="text-slate-400">Interni: </span>
-                            <span className="text-white">{request.InteriorConditions}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400">Esterni: </span>
-                            <span className="text-white">{request.ExteriorConditions}</span>
-                          </div>
-                          {request.MechanicalConditions && (
-                            <div>
-                              <span className="text-slate-400">Meccaniche: </span>
-                              <span className="text-white">{request.MechanicalConditions}</span>
-                            </div>
-                          )}
-                        </div>
                       </div>
 
                       <Button 
