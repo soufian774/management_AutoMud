@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -25,8 +25,7 @@ import {
   Menu,
   ChevronDown,
   ChevronUp,
-  ArrowRight,
-  Download
+  ArrowRight
 } from 'lucide-react'
 import { type CompleteRequestDetail, type RequestOffer, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor, FinalOutcomeEnum, CloseReasonEnum} from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
@@ -38,6 +37,7 @@ import VehicleEditor from '@/components/VehicleEditor'
 import OffersEditor from '@/components/OffersEditor'
 import ShareModal from '@/components/ShareModal'
 import ImageManager from '@/components/ImageManager'
+import { OptimizedGallery } from '@/components/OptimizedGallery'
 
 export default function RequestDetail() {
   const { requestId } = useParams<{ requestId: string }>()
@@ -49,7 +49,7 @@ export default function RequestDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Stati per la galleria immagini
+  // Stati per la galleria immagini - OTTIMIZZATI
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
@@ -91,14 +91,11 @@ export default function RequestDetail() {
 
   // Gestione tasto indietro
   const handleBack = () => {
-    //Legge il parametro page dall'URL
     const returnPage = searchParams.get('page')
     
     if (returnPage) {
-      // Se c'è una pagina specifica, torna a quella
       navigate(`/dashboard?page=${returnPage}`)
     } else {
-      // Altrimenti torna alla prima pagina
       navigate('/dashboard')
     }
   }
@@ -163,8 +160,14 @@ export default function RequestDetail() {
   const getImageUrl = (id: string, name: string) =>
     `https://automudblobstorage.blob.core.windows.net/automudformimages/${id}/${name}`
 
-  // Gestione modal immagini
-  const openImageModal = () => setIsImageModalOpen(true)
+  // Gestione modal immagini - OTTIMIZZATA
+  const openImageModal = (imageIndex?: number) => {
+    if (imageIndex !== undefined) {
+      setSelectedImageIndex(imageIndex)
+    }
+    setIsImageModalOpen(true)
+  }
+  
   const closeImageModal = () => setIsImageModalOpen(false)
 
   // Handler per eventi
@@ -208,10 +211,16 @@ export default function RequestDetail() {
     setRequest(prev => prev ? { ...prev, Images: updatedImages } : null)
   }
 
-  // Gestione tasti per modal immagini
+  // Funzione per scaricare immagini
+  const handleDownloadImage = useCallback((imageUrl: string, imageName: string) => {
+    console.log('🖼️ Apertura immagine:', imageName)
+    window.open(imageUrl, '_blank', 'noopener,noreferrer')
+  }, [])
+
+  // Gestione tasti per modal immagini - OTTIMIZZATA
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (!isImageModalOpen) return
+      if (!isImageModalOpen || !request?.Images.length) return
       
       switch (e.key) {
         case 'Escape':
@@ -220,13 +229,13 @@ export default function RequestDetail() {
         case 'ArrowLeft':
           e.preventDefault()
           setSelectedImageIndex(prev => 
-            prev === 0 ? (request?.Images.length || 1) - 1 : prev - 1
+            prev === 0 ? request.Images.length - 1 : prev - 1
           )
           break
         case 'ArrowRight':
           e.preventDefault()
           setSelectedImageIndex(prev => 
-            prev === (request?.Images.length || 1) - 1 ? 0 : prev + 1
+            prev === request.Images.length - 1 ? 0 : prev + 1
           )
           break
       }
@@ -538,7 +547,7 @@ export default function RequestDetail() {
           {/* MOBILE: Sezioni collassabili - Solo su mobile */}
           <div className="lg:hidden space-y-4">
             
-            {/* Galleria Mobile */}
+            {/* Galleria Mobile - OTTIMIZZATA */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('gallery')}
@@ -553,109 +562,21 @@ export default function RequestDetail() {
               
               {expandedSections.gallery && (
                 <div className="p-4 pt-0">
-                  <div className="w-full h-60 bg-slate-700/50 border border-slate-600 rounded-lg mb-3 overflow-hidden relative group">
-                    {request.Images.length > 0 ? (
-                      <>
-                        <img
-                          src={getImageUrl(request.Id, request.Images[selectedImageIndex])}
-                          alt={`${request.Make} ${request.Model} - Immagine ${selectedImageIndex + 1}`}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
-                          onClick={openImageModal}
-                          onError={(e) => {
-                            e.currentTarget.style.display = 'none';
-                            const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display = 'flex';
-                          }}
-                        />
-                        
-                        <div 
-                          className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center cursor-pointer"
-                          onClick={openImageModal}
-                        >
-                          <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        </div>
-                        
-                        <div className="absolute inset-0 hidden items-center justify-center bg-slate-700/50">
-                          <FileText className="h-8 w-8 text-slate-400" />
-                        </div>
-                        
-                        {request.Images.length > 1 && (
-                          <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedImageIndex(prev => 
-                                  prev === 0 ? request.Images.length - 1 : prev - 1
-                                )
-                              }}
-                              className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors touch-manipulation"
-                            >
-                              ‹
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedImageIndex(prev => 
-                                  prev === request.Images.length - 1 ? 0 : prev + 1
-                                )
-                              }}
-                              className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors touch-manipulation"
-                            >
-                              ›
-                            </button>
-                            
-                            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 px-2 py-1 rounded text-white text-xs">
-                              {selectedImageIndex + 1} / {request.Images.length}
-                            </div>
-                          </>
-                        )}
-                      </>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <div className="text-center">
-                          <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                          <span className="text-slate-400 text-sm">Nessuna immagine</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Thumbnails Mobile */}
-                  {request.Images.length > 0 && (
-                    <div className="grid grid-cols-4 gap-2 mb-3">
-                      {request.Images.slice(0, 4).map((imageName, index) => (
-                        <div 
-                          key={index}
-                          onClick={() => setSelectedImageIndex(index)}
-                          className={`w-full h-16 bg-slate-700/50 border-2 rounded overflow-hidden cursor-pointer transition-all touch-manipulation ${
-                            selectedImageIndex === index 
-                              ? 'border-orange-500 ring-2 ring-orange-500/30' 
-                              : 'border-slate-600 hover:border-orange-400'
-                          }`}
-                        >
-                          <img
-                            src={getImageUrl(request.Id, imageName)}
-                            alt={`Thumbnail ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <Button 
-                    onClick={() => setIsImageManagerOpen(true)}
-                    variant="outline" 
-                    className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-                  >
-                    <Camera className="h-4 w-4 mr-2" />
-                    Gestisci Immagini
-                  </Button>
+                  <OptimizedGallery
+                    images={request.Images}
+                    requestId={request.Id}
+                    onImageClick={openImageModal}
+                    onManageClick={() => setIsImageManagerOpen(true)}
+                    getImageUrl={getImageUrl}
+                    selectedImageIndex={selectedImageIndex}
+                    onImageSelect={setSelectedImageIndex}
+                    className="mobile-gallery"
+                  />
                 </div>
               )}
             </div>
 
-            {/* 🆕 Info Cliente & Veicolo Mobile - SEZIONE MODIFICATA */}
+            {/* Info Cliente & Veicolo Mobile */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('vehicle')}
@@ -769,7 +690,7 @@ export default function RequestDetail() {
                       </div>
                     </div>
 
-                    {/* 🆕 CONDIZIONI DETTAGLIATE - SPOSTATE QUI */}
+                    {/* Condizioni Dettagliate */}
                     <div className="pt-4 border-t border-slate-600">
                       <h4 className="font-semibold mb-3 text-white text-sm">Condizioni Dettagliate</h4>
                       <div className="space-y-3 text-sm">
@@ -815,7 +736,6 @@ export default function RequestDetail() {
               
               {expandedSections.economic && (
                 <div className="p-4 pt-0 space-y-4">
-
                   {/* Range Valutazione */}
                   {request.Management && (
                     <div className="mb-4 p-3 bg-slate-700/30 rounded-lg">
@@ -936,7 +856,7 @@ export default function RequestDetail() {
               )}
             </div>
 
-            {/* 🆕 Note e Storico Mobile - SEZIONE MODIFICATA (RIMOSSE LE CONDIZIONI) */}
+            {/* Note e Storico Mobile */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('notes')}
@@ -951,7 +871,7 @@ export default function RequestDetail() {
               
               {expandedSections.notes && (
                 <div className="p-4 pt-0 space-y-4">
-                  {/* Note di Gestione - SOLO LE NOTE */}
+                  {/* Note di Gestione */}
                   {request.Management && (
                     <div>
                       <div className="flex justify-between items-center mb-3">
@@ -993,7 +913,6 @@ export default function RequestDetail() {
                             : [...request.StatusHistory].reverse().slice(0, 3)
                           ).map((status) => (
                             <div key={status.Id} className="bg-slate-700/30 rounded p-3 space-y-2">
-                              {/* Header stato - Mobile responsive */}
                               <div className="flex items-center justify-between">
                                 <Badge 
                                   className={`text-xs ${getBadgeStyles(getStatusColor(status.Status))}`}
@@ -1005,8 +924,7 @@ export default function RequestDetail() {
                                 </span>
                               </div>
                               
-                              {/* Dettagli Esito Finale - Mobile stack */}
-                              {status.Status === 40 && status.FinalOutcome && (
+                                                            {status.Status === 40 && status.FinalOutcome && (
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-400">Esito:</span>
@@ -1021,7 +939,6 @@ export default function RequestDetail() {
                                     </Badge>
                                   </div>
                                   
-                                  {/* Motivo se Non Acquistata - Mobile wrap */}
                                   {status.FinalOutcome === 30 && status.CloseReason && (
                                     <div className="space-y-1">
                                       <span className="text-xs text-slate-400 block">Motivo:</span>
@@ -1029,7 +946,6 @@ export default function RequestDetail() {
                                         <Badge className="bg-red-700 text-white text-xs leading-tight">
                                           {CloseReasonEnum[status.CloseReason]}
                                         </Badge>
-                                        {/* Icona email se automazione */}
                                         {status.CloseReason === 20 && (
                                           <div className="flex items-center gap-1">
                                             <Mail className="h-3 w-3 text-orange-400" />
@@ -1042,7 +958,6 @@ export default function RequestDetail() {
                                 </div>
                               )}
                               
-                              {/* Note cambio stato - Mobile responsive */}
                               {status.Notes && (
                                 <div className="pt-2 border-t border-slate-600">
                                   <span className="text-xs text-slate-400 block mb-1">Note cambio stato:</span>
@@ -1054,7 +969,6 @@ export default function RequestDetail() {
                             </div>
                           ))}
                           
-                          {/* Pulsante espandi/contrai - Mobile friendly */}
                           {request.StatusHistory.length > 3 && (
                             <div className="mt-3">
                               {!showAllStates && (
@@ -1093,145 +1007,21 @@ export default function RequestDetail() {
           <div className="hidden lg:block lg:col-span-4">
             <div className="grid grid-cols-4 gap-6">
             
-            {/* COLONNA 1 - Galleria Immagini */}
+            {/* COLONNA 1 - Galleria Immagini - OTTIMIZZATA */}
             <div className="col-span-1">
-              <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
-                <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
-                  <FileText className="h-5 w-5 mr-2" />
-                  Galleria Immagini ({request.Images.length})
-                </h2>
-                
-                {/* Immagine principale */}
-                <div className="w-full h-80 bg-slate-700/50 border border-slate-600 rounded-lg mb-4 overflow-hidden relative group">
-                  {request.Images.length > 0 ? (
-                    <>
-                      <img
-                        src={getImageUrl(request.Id, request.Images[selectedImageIndex])}
-                        alt={`${request.Make} ${request.Model} - Immagine ${selectedImageIndex + 1}`}
-                        className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105 cursor-pointer"
-                        onClick={openImageModal}
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
-                      />
-                      
-                      <div 
-                        className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center cursor-pointer"
-                        onClick={openImageModal}
-                      >
-                        <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      
-                      <div className="absolute inset-0 hidden items-center justify-center bg-slate-700/50">
-                        <div className="text-center">
-                          <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                          <span className="text-slate-400 text-sm">Errore caricamento immagine</span>
-                        </div>
-                      </div>
-                      
-                      {request.Images.length > 1 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedImageIndex(prev => 
-                                prev === 0 ? request.Images.length - 1 : prev - 1
-                              )
-                            }}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10"
-                          >
-                            ‹
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedImageIndex(prev => 
-                                prev === request.Images.length - 1 ? 0 : prev + 1
-                              )
-                            }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10"
-                          >
-                            ›
-                          </button>
-                          
-                          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1 rounded-full text-white text-sm">
-                            {selectedImageIndex + 1} / {request.Images.length}
-                          </div>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="text-center">
-                        <FileText className="h-16 w-16 text-slate-400 mx-auto mb-3" />
-                        <span className="text-slate-400">Nessuna immagine disponibile</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Thumbnails */}
-                <div className="grid grid-cols-3 gap-2">
-                  {request.Images.slice(0, 6).map((imageName, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`w-full h-20 bg-slate-700/50 border-2 rounded overflow-hidden cursor-pointer transition-all ${
-                        selectedImageIndex === index 
-                          ? 'border-orange-500 ring-2 ring-orange-500/30' 
-                          : 'border-slate-600 hover:border-orange-400'
-                      }`}
-                    >
-                      <img
-                        src={getImageUrl(request.Id, imageName)}
-                        alt={`Thumbnail ${index + 1}`}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
-                      />
-                      <div className="w-full h-full hidden items-center justify-center bg-slate-700/50">
-                        <FileText className="h-6 w-6 text-slate-400" />
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {request.Images.length > 6 && (
-                    <div className="w-full h-20 bg-slate-700/50 border border-slate-600 rounded flex items-center justify-center">
-                      <span className="text-slate-400 text-sm font-medium">
-                        +{request.Images.length - 6}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {request.Images.length > 0 && request.Images.length < 6 && 
-                    Array.from({ length: 6 - request.Images.length }).map((_, index) => (
-                      <div 
-                        key={`placeholder-${index}`}
-                        className="w-full h-20 bg-slate-700/30 border border-slate-600 rounded flex items-center justify-center"
-                      >
-                        <span className="text-slate-500 text-xs">+</span>
-                      </div>
-                    ))
-                  }
-                </div>
-                
-                <Button 
-                  onClick={() => setIsImageManagerOpen(true)}
-                  variant="outline" 
-                  className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Gestisci Immagini
-                </Button>
-              </div>
+              <OptimizedGallery
+                images={request.Images}
+                requestId={request.Id}
+                onImageClick={openImageModal}
+                onManageClick={() => setIsImageManagerOpen(true)}
+                getImageUrl={getImageUrl}
+                selectedImageIndex={selectedImageIndex}
+                onImageSelect={setSelectedImageIndex}
+                className="h-fit"
+              />
             </div>
 
-            {/* 🆕 COLONNA 2 - Dettagli Veicolo - SEZIONE MODIFICATA */}
+            {/* COLONNA 2 - Dettagli Veicolo */}
             <div className="col-span-1">
               <div className="space-y-6">
                 
@@ -1306,7 +1096,7 @@ export default function RequestDetail() {
                     </div>
                   </div>
 
-                  {/* 🆕 CONDIZIONI DETTAGLIATE - SPOSTATE QUI */}
+                  {/* Condizioni Dettagliate */}
                   <div className="mt-6 pt-6 border-t border-slate-600">
                     <h3 className="font-semibold mb-4 text-white">Condizioni Dettagliate</h3>
                     <div className="space-y-4">
@@ -1591,7 +1381,7 @@ export default function RequestDetail() {
                   </div>
                 </div>
 
-                {/* 🆕 Note di Gestione - SEZIONE MODIFICATA (RIMOSSE LE CONDIZIONI) */}
+                {/* Note di Gestione */}
                 {request.Management && (
                   <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
                     <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
@@ -1729,19 +1519,22 @@ export default function RequestDetail() {
             )}
 
             {/* Pulsante download - Mobile Responsive */}
-            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-black bg-opacity-50 rounded-lg backdrop-blur-sm">
-              <a
-                href={getImageUrl(request.Id, request.Images[selectedImageIndex])}
-                download={request.Images[selectedImageIndex]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 text-white hover:bg-white hover:bg-opacity-20 transition-colors rounded-lg touch-manipulation"
-                title="Scarica immagine"
-              >
-                <Download className="h-3 sm:h-4 w-3 sm:w-4" />
-                <span className="text-xs hidden sm:inline">Scarica</span>
-              </a>
-            </div>
+            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-30">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadImage(
+                  getImageUrl(request.Id, request.Images[selectedImageIndex]),
+                  request.Images[selectedImageIndex]
+                );
+              }}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 bg-black bg-opacity-70 hover:bg-opacity-90 text-white transition-all duration-200 rounded-lg backdrop-blur-sm shadow-lg border border-white border-opacity-10 min-w-[44px] min-h-[44px] sm:min-w-[52px] sm:min-h-[52px]"
+              title="Apri immagine"
+            >
+              <ZoomIn className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="text-sm font-medium hidden sm:inline">Apri</span>
+            </button>
+          </div>
           </div>
         </div>
       )}

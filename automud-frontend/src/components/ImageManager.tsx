@@ -79,7 +79,7 @@ export default function ImageManager({
   
   // 🆕 PAGINAZIONE SEMPLICE
   const [currentPage, setCurrentPage] = useState(1)
-  const IMAGES_PER_PAGE = 12 // Mostra solo 12 immagini per volta
+  const IMAGES_PER_PAGE = 8// Mostra solo 12 immagini per volta
   
   // Stati per statistiche
   const [stats, setStats] = useState({
@@ -89,7 +89,7 @@ export default function ImageManager({
   })
 
   // Limiti
-  const MAX_SINGLE_FILE_SIZE = 5 * 1024 * 1024 // 5MB per file
+  const MAX_SINGLE_FILE_SIZE = 5 * 1024 * 1024 // 5MB per file DOPO compressione
   const MAX_FILES_PER_REQUEST = 50 // Massimo 50 foto per richiesta
   const MAX_FILES_PER_UPLOAD = 20 // 20 file per volta (per performance UI)
   const COMPRESSION_QUALITY = 0.2
@@ -135,6 +135,15 @@ export default function ImageManager({
       })
     })
   }, [])
+
+  // ✅ NUOVA FUNZIONE - Validazione file compressi
+  const validateCompressedFile = useCallback((originalFile: File, compressedFile: File): string | null => {
+    // Controlla dimensione del file compresso
+    if (compressedFile.size > MAX_SINGLE_FILE_SIZE) {
+      return `${originalFile.name}: Anche dopo compressione il file è troppo grande (${formatFileSize(compressedFile.size)}). Massimo ${formatFileSize(MAX_SINGLE_FILE_SIZE)} per file.`
+    }
+    return null
+  }, [formatFileSize])
 
   // Carica immagini dettagliate quando si apre il modal
   const fetchImages = useCallback(async () => {
@@ -237,7 +246,7 @@ export default function ImageManager({
     }
   }, [])
 
-  // Validazione file
+  // ✅ VALIDAZIONE AGGIORNATA - Solo tipo, non dimensione originale
   const validateFiles = useCallback(async (files: File[]) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
     
@@ -257,18 +266,17 @@ export default function ImageManager({
       return { validFiles: [], errors }
     }
 
+    // ✅ VALIDAZIONE SOLO TIPO - La dimensione sarà controllata dopo compressione
     files.forEach(file => {
       if (!allowedTypes.includes(file.type)) {
         errors.push(`${file.name}: Formato non supportato. Usa JPEG, PNG, GIF o WebP.`)
-      } else if (file.size > MAX_SINGLE_FILE_SIZE) {
-        errors.push(`${file.name}: File troppo grande (${formatFileSize(file.size)}). Massimo ${formatFileSize(MAX_SINGLE_FILE_SIZE)} per file.`)
       } else {
         validFiles.push(file)
       }
     })
 
     return { validFiles, errors }
-  }, [stats.totalImages, formatFileSize])
+  }, [stats.totalImages])
 
   // Upload con compressione
   const handleUpload = useCallback(async (files: File[]) => {
@@ -297,7 +305,7 @@ export default function ImageManager({
     performUpload(validFiles)
   }, [validateFiles, showConfirmation])
 
-  // Funzione di upload con compressione
+  // ✅ FUNZIONE DI UPLOAD AGGIORNATA con controllo post-compressione
   const performUpload = useCallback(async (validFiles: File[]) => {
     setIsUploading(true)
     
@@ -319,7 +327,7 @@ export default function ImageManager({
 
       console.log(`🔄 Inizio compressione di ${validFiles.length} immagini`)
 
-      // FASE 1: Compressione
+      // FASE 1: Compressione + Validazione dimensione
       const compressedFiles: File[] = []
       let totalOriginalSize = 0
       let totalCompressedSize = 0
@@ -335,6 +343,21 @@ export default function ImageManager({
 
         try {
           const compressedFile = await compressImage(file)
+          
+          // ✅ CONTROLLO DIMENSIONE SU FILE COMPRESSO
+          const sizeError = validateCompressedFile(file, compressedFile)
+          if (sizeError) {
+            console.error(`❌ ${sizeError}`)
+            setUploadProgress(prev => prev.map((p, index) => 
+              index === i ? { 
+                ...p, 
+                status: 'error' as const, 
+                error: sizeError 
+              } : p
+            ))
+            continue // Salta questo file ma continua con gli altri
+          }
+
           compressedFiles.push(compressedFile)
           totalCompressedSize += compressedFile.size
 
@@ -360,6 +383,11 @@ export default function ImageManager({
         }
       }
 
+      // ✅ CONTROLLO: Se nessun file è passato la validazione post-compressione
+      if (compressedFiles.length === 0) {
+        throw new Error('Nessun file valido dopo compressione e validazione dimensioni')
+      }
+
       // Aggiorna statistiche compressione
       const compressionRatio = totalOriginalSize > 0 ? (totalOriginalSize - totalCompressedSize) / totalOriginalSize : 0
       setCompressionStats({
@@ -369,7 +397,7 @@ export default function ImageManager({
         filesProcessed: compressedFiles.length
       })
 
-      // FASE 2: Upload
+      // FASE 2: Upload (solo file che hanno passato tutti i controlli)
       const formData = new FormData()
       compressedFiles.forEach(file => {
         formData.append('images', file)
@@ -439,7 +467,7 @@ export default function ImageManager({
         fileInputRef.current.value = ''
       }
     }
-  }, [requestId, compressImage, fetchImages, currentImages, onImagesUpdated])
+  }, [requestId, compressImage, validateCompressedFile, fetchImages, currentImages, onImagesUpdated])
 
   // Elimina immagine
   const handleDeleteImage = useCallback(async (imageId: number, imageName: string) => {
@@ -588,7 +616,7 @@ export default function ImageManager({
                     <span className="font-medium text-slate-200 text-sm">Limiti</span>
                   </div>
                   <div className="text-xs text-slate-400 space-y-1">
-                    <p>Max per file: {formatFileSize(MAX_SINGLE_FILE_SIZE)}</p>
+                    <p>Max per file: {formatFileSize(MAX_SINGLE_FILE_SIZE)} (dopo compressione)</p>
                     <p>Foto: {stats.totalImages}/{stats.maxImages} • Libere: {stats.remainingSlots}</p>
                   </div>
                 </div>
@@ -658,6 +686,9 @@ export default function ImageManager({
                               style={{ width: `${progress.progress}%` }}
                             />
                           </div>
+                          {progress.error && (
+                            <p className="text-xs text-red-400 mt-1 truncate">{progress.error}</p>
+                          )}
                         </div>
                         <div className="flex-shrink-0">
                           {progress.status === 'success' && <CheckCircle className="h-4 w-4 text-green-400" />}
@@ -687,7 +718,7 @@ export default function ImageManager({
                       {isDragOver ? 'Rilascia qui' : 'Carica Immagini'}
                     </h3>
                     <p className="text-slate-400 text-sm mb-3">
-                      Trascina o clicca • Max {formatFileSize(MAX_SINGLE_FILE_SIZE)} per file
+                      Trascina o clicca • Compressione automatica • Max {formatFileSize(MAX_SINGLE_FILE_SIZE)} dopo compressione
                     </p>
                     
                     <div className="flex gap-2 justify-center">
