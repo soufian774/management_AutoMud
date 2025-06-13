@@ -1,0 +1,158 @@
+/* src/index.css - Aggiungi queste regole alla fine */
+
+/* 🚀 TOUCH OPTIMIZATIONS per RequestCard */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch devices - Mostra sempre i controlli gallery */
+  .request-card-gallery .gallery-controls {
+    opacity: 1 !important;
+  }
+  
+  /* Touch feedback per swipe areas */
+  .request-card-gallery {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-x;
+  }
+}
+
+/* 📱 SWIPE INDICATORS - Solo su touch devices */
+@media (pointer: coarse) {
+  .swipe-indicator {
+    display: block !important;
+  }
+}
+
+@media (pointer: fine) {
+  .swipe-indicator {
+    display: none !important;
+  }
+}
+
+/* ⚡ PERFORMANCE OPTIMIZATIONS */
+.request-card-gallery {
+  /* Hardware acceleration per smooth animations */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.request-card-gallery img {
+  /* Smooth transitions */
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 🎯 HOVER STATES - Solo su desktop */
+@media (hover: hover) and (pointer: fine) {
+  .request-card-gallery:hover .gallery-controls {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+  }
+  
+  .request-card-gallery .gallery-controls {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+  }
+}
+
+/* 🔧 ACCESSIBILITY IMPROVEMENTS */
+.gallery-nav-button {
+  /* Larger touch targets */
+  min-width: 44px;
+  min-height: 44px;
+  
+  /* Better focus visibility */
+  outline-offset: 2px;
+}
+
+.gallery-nav-button:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* 📊 DOTS INDICATORS */
+.gallery-dots {
+  /* Better touch targets for dots */
+  padding: 8px;
+}
+
+.gallery-dot {
+  min-width: 16px;
+  min-height: 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.gallery-dot:focus-visible {
+  outline: 1px solid white;
+  outline-offset: 1px;
+}
+
+/* 🚫 PREVENT OVERSCROLL */
+.dashboard-grid {
+  overscroll-behavior: contain;
+}
+
+/* 💫 SMOOTH SCROLLING */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 🎨 LOADING STATES */
+.card-image-loading {
+  background: linear-gradient(90deg, 
+    rgba(71, 85, 105, 0.3) 25%, 
+    rgba(71, 85, 105, 0.5) 50%, 
+    rgba(71, 85, 105, 0.3) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 🎯 ANTI-SELECT per gallery */
+.request-card-gallery {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 📱 SAFE AREAS per notch devices */
+@supports(padding: max(0px)) {
+  .dashboard-container {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+}
+
+/* 🔄 LOADING SPINNER per lazy images */
+.lazy-image-loader {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 🎪 CARD HOVER EFFECTS - Desktop only */
+@media (hover: hover) {
+  .request-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .request-card:hover {
+    transform: translateY(-2px);
+  }
+}
