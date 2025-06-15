@@ -1,4 +1,4 @@
-// src/components/OptimizedGallery.tsx
+// src/components/OptimizedGallery.tsx - AGGIORNATO con swipe touch
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { FileText, Camera, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -80,6 +80,107 @@ const LazyImage: React.FC<LazyImageProps> = ({
   )
 }
 
+// 🎯 HOOK PER SWIPE GESTURES AVANZATO
+interface SwipeConfig {
+  minSwipeDistance?: number
+  maxVerticalDistance?: number
+  minVelocity?: number
+  timeThreshold?: number
+}
+
+interface TouchPoint {
+  x: number
+  y: number
+  time: number
+}
+
+const useAdvancedSwipe = (
+  onSwipeLeft: () => void,
+  onSwipeRight: () => void,
+  config: SwipeConfig = {}
+) => {
+  const defaultConfig = {
+    minSwipeDistance: 50,
+    maxVerticalDistance: 100,
+    minVelocity: 0.3,
+    timeThreshold: 300,
+    ...config
+  }
+
+  const [touchStart, setTouchStart] = useState<TouchPoint | null>(null)
+  const [touchEnd, setTouchEnd] = useState<TouchPoint | null>(null)
+  const isSwipingRef = useRef(false)
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation()
+    setTouchEnd(null)
+    isSwipingRef.current = false
+    setTouchStart({
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+      time: Date.now()
+    })
+  }, [])
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStart) return
+    
+    const currentTouch = {
+      x: e.targetTouches[0].clientX,
+      y: e.targetTouches[0].clientY,
+      time: Date.now()
+    }
+    
+    setTouchEnd(currentTouch)
+    
+    // Calcola distanza per feedback visivo
+    const distanceX = Math.abs(touchStart.x - currentTouch.x)
+    const distanceY = Math.abs(touchStart.y - currentTouch.y)
+    
+    // Inizia swipe se movimento orizzontale predominante
+    if (distanceX > 20 && distanceX > distanceY && !isSwipingRef.current) {
+      isSwipingRef.current = true
+      // Previeni scroll della pagina durante swipe
+      e.preventDefault()
+    }
+  }, [touchStart])
+
+  const onTouchEnd = useCallback(() => {
+    if (!touchStart || !touchEnd) return
+    
+    const distanceX = touchStart.x - touchEnd.x
+    const distanceY = Math.abs(touchStart.y - touchEnd.y)
+    const timeElapsed = touchEnd.time - touchStart.time
+    
+    // Calcola velocità (pixel/ms)
+    const velocity = Math.abs(distanceX) / timeElapsed
+    
+    // Verifica condizioni per swipe valido
+    const isValidSwipe = 
+      Math.abs(distanceX) > defaultConfig.minSwipeDistance &&
+      distanceY < defaultConfig.maxVerticalDistance &&
+      velocity > defaultConfig.minVelocity &&
+      timeElapsed < defaultConfig.timeThreshold
+    
+    if (isValidSwipe) {
+      const isLeftSwipe = distanceX > 0
+      const isRightSwipe = distanceX < 0
+      
+      if (isLeftSwipe) onSwipeLeft()
+      if (isRightSwipe) onSwipeRight()
+    }
+    
+    isSwipingRef.current = false
+  }, [touchStart, touchEnd, onSwipeLeft, onSwipeRight, defaultConfig])
+
+  return { 
+    onTouchStart, 
+    onTouchMove, 
+    onTouchEnd,
+    isSwipingRef: isSwipingRef.current
+  }
+}
+
 // 🎯 HOOK PER SMART PRELOAD
 const useSmartPreload = (
   images: string[], 
@@ -134,7 +235,7 @@ interface OptimizedGalleryProps {
   onImageSelect?: (index: number) => void
 }
 
-// 🖼️ COMPONENTE GALLERY OTTIMIZZATO
+// 🖼️ COMPONENTE GALLERY OTTIMIZZATO CON SWIPE
 export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({ 
   images, 
   requestId, 
@@ -179,22 +280,66 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
   }, [selectedImageIndex, currentPage, IMAGES_PER_PAGE])
 
   // 🎯 Navigazione pagine
-  const goToPage = useCallback((newPage: number) => {
-    if (newPage >= 0 && newPage < totalPages) {
-      setCurrentPage(newPage)
-      // Aggiorna anche l'immagine selezionata alla prima della nuova pagina
-      setSelectedImageIndex(newPage * IMAGES_PER_PAGE)
+  const goToPrevious = useCallback(() => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1)
+      setSelectedImageIndex((currentPage - 1) * IMAGES_PER_PAGE)
     }
-  }, [totalPages, IMAGES_PER_PAGE, setSelectedImageIndex])
+  }, [currentPage, IMAGES_PER_PAGE, setSelectedImageIndex])
+
+  const goToNext = useCallback(() => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(prev => prev + 1)
+      setSelectedImageIndex((currentPage + 1) * IMAGES_PER_PAGE)
+    }
+  }, [currentPage, totalPages, IMAGES_PER_PAGE, setSelectedImageIndex])
 
   // 📱 Navigazione immagini singole
-  const selectImage = useCallback((globalIndex: number) => {
-    const targetPage = Math.floor(globalIndex / IMAGES_PER_PAGE)
-    if (targetPage !== currentPage) {
-      setCurrentPage(targetPage)
+  const selectPreviousImage = useCallback(() => {
+    if (selectedImageIndex > 0) {
+      const newIndex = selectedImageIndex - 1
+      const targetPage = Math.floor(newIndex / IMAGES_PER_PAGE)
+      if (targetPage !== currentPage) {
+        setCurrentPage(targetPage)
+      }
+      setSelectedImageIndex(newIndex)
     }
-    setSelectedImageIndex(globalIndex)
-  }, [currentPage, IMAGES_PER_PAGE, setSelectedImageIndex])
+  }, [selectedImageIndex, currentPage, IMAGES_PER_PAGE, setSelectedImageIndex])
+
+  const selectNextImage = useCallback(() => {
+    if (selectedImageIndex < images.length - 1) {
+      const newIndex = selectedImageIndex + 1
+      const targetPage = Math.floor(newIndex / IMAGES_PER_PAGE)
+      if (targetPage !== currentPage) {
+        setCurrentPage(targetPage)
+      }
+      setSelectedImageIndex(newIndex)
+    }
+  }, [selectedImageIndex, images.length, currentPage, IMAGES_PER_PAGE, setSelectedImageIndex])
+
+  // 🎯 SWIPE GESTURE per immagine principale
+  const mainImageSwipeHandlers = useAdvancedSwipe(
+    selectNextImage,  // Swipe left = next image
+    selectPreviousImage,  // Swipe right = previous image
+    {
+      minSwipeDistance: 30,
+      maxVerticalDistance: 150,
+      minVelocity: 0.2,
+      timeThreshold: 500
+    }
+  )
+
+  // 🎯 SWIPE GESTURE per griglia thumbnails (cambia pagina)
+  const thumbnailSwipeHandlers = useAdvancedSwipe(
+    goToNext,    // Swipe left = next page
+    goToPrevious, // Swipe right = previous page
+    {
+      minSwipeDistance: 50,
+      maxVerticalDistance: 100,
+      minVelocity: 0.3,
+      timeThreshold: 400
+    }
+  )
 
   if (images.length === 0) {
     return (
@@ -236,20 +381,23 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
           Galleria Immagini ({images.length})
         </h2>
         
-        {/* 🖼️ IMMAGINE PRINCIPALE OTTIMIZZATA */}
-        <div className="w-full h-60 lg:h-80 bg-slate-700/50 border border-slate-600 rounded-lg mb-4 overflow-hidden relative group">
+        {/* 🖼️ IMMAGINE PRINCIPALE CON SWIPE */}
+        <div 
+          className="w-full h-60 lg:h-80 bg-slate-700/50 border border-slate-600 rounded-lg mb-4 overflow-hidden relative group cursor-pointer"
+          {...mainImageSwipeHandlers}
+        >
           <LazyImage
             src={getImageUrl(requestId, selectedImage)}
             alt={`Immagine ${selectedImageIndex + 1}`}
-            className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105 cursor-pointer"
+            className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
             onClick={() => onImageClick && onImageClick(selectedImageIndex)}
             fallbackIcon={<FileText className="h-8 lg:h-12 w-8 lg:w-12 text-slate-400" />}
-            priority={true} // Immagine principale sempre prioritaria
+            priority={true}
           />
           
           {/* Overlay zoom */}
           <div 
-            className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center cursor-pointer"
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center"
             onClick={() => onImageClick && onImageClick(selectedImageIndex)}
           >
             <ZoomIn className="h-6 lg:h-8 w-6 lg:w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -261,10 +409,10 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  const prevIndex = selectedImageIndex === 0 ? images.length - 1 : selectedImageIndex - 1
-                  selectImage(prevIndex)
+                  selectPreviousImage()
                 }}
-                className="absolute left-2 lg:left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 lg:p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10 touch-manipulation"
+                disabled={selectedImageIndex === 0}
+                className="absolute left-2 lg:left-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 lg:p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10 touch-manipulation disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Immagine precedente"
               >
                 <ChevronLeft className="h-4 lg:h-5 w-4 lg:w-5" />
@@ -272,10 +420,10 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  const nextIndex = selectedImageIndex === images.length - 1 ? 0 : selectedImageIndex + 1
-                  selectImage(nextIndex)
+                  selectNextImage()
                 }}
-                className="absolute right-2 lg:right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 lg:p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10 touch-manipulation"
+                disabled={selectedImageIndex === images.length - 1}
+                className="absolute right-2 lg:right-3 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-1.5 lg:p-2 rounded-full transition-colors opacity-70 hover:opacity-100 z-10 touch-manipulation disabled:opacity-30 disabled:cursor-not-allowed"
                 aria-label="Immagine successiva"
               >
                 <ChevronRight className="h-4 lg:h-5 w-4 lg:w-5" />
@@ -289,14 +437,17 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
           )}
         </div>
         
-        {/* 📱 THUMBNAILS PAGINATI - SOLO 4 ALLA VOLTA */}
+        {/* 📱 THUMBNAILS PAGINATI CON SWIPE */}
         <div className="space-y-3">
-          {/* Thumbnails della pagina corrente */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {/* Thumbnails della pagina corrente CON SWIPE */}
+          <div 
+            className="grid grid-cols-2 lg:grid-cols-4 gap-2 relative"
+            {...thumbnailSwipeHandlers}
+          >
             {currentPageImages.map((image) => (
               <div 
                 key={image.index}
-                onClick={() => selectImage(image.index)}
+                onClick={() => setSelectedImageIndex(image.index)}
                 className={`w-full h-16 lg:h-20 bg-slate-700/50 border-2 rounded overflow-hidden cursor-pointer transition-all touch-manipulation ${
                   selectedImageIndex === image.index
                     ? 'border-orange-500 ring-2 ring-orange-500/30 shadow-lg' 
@@ -308,7 +459,7 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
                   alt={`Thumbnail ${image.index + 1}`}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
                   fallbackIcon={<FileText className="h-4 lg:h-6 w-4 lg:w-6 text-slate-400" />}
-                  priority={selectedImageInCurrentPage?.index === image.index} // Priorità per thumbnail selezionata
+                  priority={selectedImageInCurrentPage?.index === image.index}
                 />
               </div>
             ))}
@@ -326,13 +477,13 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
             }
           </div>
           
-          {/* 🎯 CONTROLLI PAGINAZIONE - Solo se più di 4 immagini */}
+          {/* 🎯 CONTROLLI PAGINAZIONE */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between bg-slate-700/30 p-2 lg:p-3 rounded-lg">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => goToPage(currentPage - 1)}
+                onClick={goToPrevious}
                 disabled={currentPage === 0}
                 className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation"
               >
@@ -362,7 +513,10 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
                     return (
                       <button
                         key={pageIndex}
-                        onClick={() => goToPage(pageIndex)}
+                        onClick={() => {
+                          setCurrentPage(pageIndex)
+                          setSelectedImageIndex(pageIndex * IMAGES_PER_PAGE)
+                        }}
                         className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
                           currentPage === pageIndex
                             ? 'bg-orange-500 text-white'
@@ -379,7 +533,7 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => goToPage(currentPage + 1)}
+                onClick={goToNext}
                 disabled={currentPage === totalPages - 1}
                 className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation"
               >

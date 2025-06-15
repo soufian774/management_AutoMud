@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback} from 'react'
+import { useState, useEffect} from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -16,8 +16,7 @@ import {
   MapPin, 
   Phone, 
   Mail, 
-  X, 
-  ZoomIn, 
+  X,  
   Clock, 
   LogOut, 
   Plus,
@@ -29,6 +28,7 @@ import {
 } from 'lucide-react'
 import { type CompleteRequestDetail, type RequestOffer, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum, RequestStatusEnum, getStatusColor, FinalOutcomeEnum, CloseReasonEnum} from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
+import { useAdvancedSwipe } from '@/lib/touchGestureUtils'
 import StatusSelector from '@/components/StatusSelector'
 import NotesEditor from '@/components/NotesEditor'
 import PricingEditor from '@/components/PricingEditor'
@@ -73,6 +73,32 @@ export default function RequestDetail() {
     notes: false
   })
   const [showAllStates, setShowAllStates] = useState(false)
+
+  // 🆕 SWIPE HANDLERS per modal immagine zoomata
+  const modalSwipeHandlers = useAdvancedSwipe(
+    // onSwipeLeft (next image)
+    () => {
+      if (request?.Images.length && request.Images.length > 1) {
+        setSelectedImageIndex(prev => 
+          prev === request.Images.length - 1 ? 0 : prev + 1
+        )
+      }
+    },
+    // onSwipeRight (previous image)
+    () => {
+      if (request?.Images.length && request.Images.length > 1) {
+        setSelectedImageIndex(prev => 
+          prev === 0 ? request.Images.length - 1 : prev - 1
+        )
+      }
+    },
+    {
+      minSwipeDistance: 50,
+      maxVerticalDistance: 150,
+      minVelocity: 0.3,
+      timeThreshold: 400
+    }
+  )
 
   // Verifica autenticazione e parametri
   useEffect(() => {
@@ -211,11 +237,6 @@ export default function RequestDetail() {
     setRequest(prev => prev ? { ...prev, Images: updatedImages } : null)
   }
 
-  // Funzione per scaricare immagini
-  const handleDownloadImage = useCallback((imageUrl: string, imageName: string) => {
-    console.log('🖼️ Apertura immagine:', imageName)
-    window.open(imageUrl, '_blank', 'noopener,noreferrer')
-  }, [])
 
   // Gestione tasti per modal immagini - OTTIMIZZATA
   useEffect(() => {
@@ -547,7 +568,7 @@ export default function RequestDetail() {
           {/* MOBILE: Sezioni collassabili - Solo su mobile */}
           <div className="lg:hidden space-y-4">
             
-            {/* Galleria Mobile - OTTIMIZZATA */}
+            {/* Galleria Mobile - OTTIMIZZATA CON SWIPE */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('gallery')}
@@ -570,7 +591,7 @@ export default function RequestDetail() {
                     getImageUrl={getImageUrl}
                     selectedImageIndex={selectedImageIndex}
                     onImageSelect={setSelectedImageIndex}
-                    className="mobile-gallery"
+                    className="mobile-gallery gallery-container"
                   />
                 </div>
               )}
@@ -924,7 +945,7 @@ export default function RequestDetail() {
                                 </span>
                               </div>
                               
-                                                            {status.Status === 40 && status.FinalOutcome && (
+                              {status.Status === 40 && status.FinalOutcome && (
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs text-slate-400">Esito:</span>
@@ -1007,7 +1028,7 @@ export default function RequestDetail() {
           <div className="hidden lg:block lg:col-span-4">
             <div className="grid grid-cols-4 gap-6">
             
-            {/* COLONNA 1 - Galleria Immagini - OTTIMIZZATA */}
+            {/* COLONNA 1 - Galleria Immagini - OTTIMIZZATA CON SWIPE */}
             <div className="col-span-1">
               <OptimizedGallery
                 images={request.Images}
@@ -1017,7 +1038,7 @@ export default function RequestDetail() {
                 getImageUrl={getImageUrl}
                 selectedImageIndex={selectedImageIndex}
                 onImageSelect={setSelectedImageIndex}
-                className="h-fit"
+                className="h-fit gallery-container"
               />
             </div>
 
@@ -1414,7 +1435,7 @@ export default function RequestDetail() {
         </div>
       </div>
 
-      {/* Modal per immagine ingrandita - Mobile Responsive */}
+      {/* MODAL IMMAGINE PULITO - Contatore come overlay */}
       {isImageModalOpen && request && request.Images.length > 0 && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-95">
           <div 
@@ -1423,23 +1444,34 @@ export default function RequestDetail() {
           ></div>
           
           <div className="relative z-10 max-w-[95vw] max-h-[95vh] p-2 sm:p-4">
-            {/* Pulsante chiudi - Mobile Friendly */}
+            {/* ✅ Pulsante chiudi X - in alto a destra */}
             <button
               onClick={closeImageModal}
-              className="absolute -top-4 sm:-top-6 -right-4 sm:-right-6 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 sm:p-3 rounded-full transition-all z-30 backdrop-blur-sm shadow-lg touch-manipulation"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-black bg-opacity-70 hover:bg-opacity-90 text-white p-2 sm:p-3 rounded-full transition-all z-30 backdrop-blur-sm shadow-lg touch-manipulation"
               title="Chiudi (ESC)"
             >
               <X className="h-4 sm:h-5 w-4 sm:w-5" />
             </button>
             
-            <div className="relative group">
+            {/* Container immagine con swipe */}
+            <div 
+              className="relative group image-modal-container"
+              {...modalSwipeHandlers}
+            >
               <img
                 src={getImageUrl(request.Id, request.Images[selectedImageIndex])}
                 alt={`${request.Make} ${request.Model} - Immagine ${selectedImageIndex + 1}`}
-                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl modal-image"
               />
               
-              {/* Controlli navigazione - Mobile Optimized */}
+              {/* ✅ Contatore immagine - OVERLAY sopra l'immagine */}
+              <div className="absolute top-3 left-3 bg-black bg-opacity-70 px-3 py-1.5 rounded-lg text-white backdrop-blur-sm shadow-lg z-25">
+                <div className="text-sm font-medium">
+                  {selectedImageIndex + 1} / {request.Images.length}
+                </div>
+              </div>
+              
+              {/* Controlli navigazione */}
               {request.Images.length > 1 && (
                 <>
                   {/* Zone cliccabili invisibili per navigazione touch */}
@@ -1447,25 +1479,25 @@ export default function RequestDetail() {
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === 0 ? request.Images.length - 1 : prev - 1
                     )}
-                    className="absolute left-0 top-0 w-1/3 h-full cursor-pointer z-10"
-                    title="Immagine precedente (←)"
+                    className="absolute left-0 top-0 w-1/3 h-full cursor-pointer z-10 touch-zone"
+                    title="Immagine precedente"
                   />
                   
                   <div 
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === request.Images.length - 1 ? 0 : prev + 1
                     )}
-                    className="absolute right-0 top-0 w-1/3 h-full cursor-pointer z-10"
-                    title="Immagine successiva (→)"
+                    className="absolute right-0 top-0 w-1/3 h-full cursor-pointer z-10 touch-zone"
+                    title="Immagine successiva"
                   />
 
-                  {/* Pulsanti navigazione visibili - Mobile Responsive */}
+                  {/* Pulsanti navigazione visibili solo su hover */}
                   <button
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === 0 ? request.Images.length - 1 : prev - 1
                     )}
-                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20 touch-manipulation"
-                    title="Immagine precedente (←)"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all modal-controls opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20 touch-manipulation modal-nav-button"
+                    title="Immagine precedente"
                   >
                     <ArrowLeft className="h-4 sm:h-5 w-4 sm:w-5" />
                   </button>
@@ -1474,19 +1506,19 @@ export default function RequestDetail() {
                     onClick={() => setSelectedImageIndex(prev => 
                       prev === request.Images.length - 1 ? 0 : prev + 1
                     )}
-                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20 touch-manipulation"
-                    title="Immagine successiva (→)"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-80 text-white p-2 sm:p-3 rounded-full transition-all modal-controls opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm z-20 touch-manipulation modal-nav-button"
+                    title="Immagine successiva"
                   >
                     <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />
                   </button>
                   
-                  {/* Indicatori numerici - Mobile Responsive */}
+                  {/* Indicatori dots - in basso */}
                   <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-1 sm:gap-2">
                     {request.Images.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setSelectedImageIndex(index)}
-                        className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full transition-all touch-manipulation ${
+                        className={`w-2 sm:w-3 h-2 sm:h-3 rounded-full transition-all touch-manipulation gallery-dot ${
                           index === selectedImageIndex
                             ? 'bg-white scale-110'
                             : 'bg-white bg-opacity-40 hover:bg-opacity-60'
@@ -1498,43 +1530,6 @@ export default function RequestDetail() {
                 </>
               )}
             </div>
-            
-            {/* Info immagine corrente - Mobile Responsive */}
-            <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-white text-center backdrop-blur-sm">
-              <div className="text-xs sm:text-sm font-medium">
-                Immagine {selectedImageIndex + 1} di {request.Images.length}
-              </div>
-              <div className="text-xs text-gray-300 mt-1">
-                {request.Make} {request.Model} ({request.RegistrationYear})
-              </div>
-            </div>
-            
-            {/* Istruzioni controlli - Mobile Responsive */}
-            {request.Images.length > 1 && (
-              <div className="absolute top-4 sm:top-6 left-4 sm:left-6 bg-black bg-opacity-50 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-white text-xs backdrop-blur-sm">
-                <div>← → per navigare</div>
-                <div>ESC per chiudere</div>
-                <div className="hidden sm:block">Click sui lati per cambiare</div>
-              </div>
-            )}
-
-            {/* Pulsante download - Mobile Responsive */}
-            <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-30">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDownloadImage(
-                  getImageUrl(request.Id, request.Images[selectedImageIndex]),
-                  request.Images[selectedImageIndex]
-                );
-              }}
-              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-3 bg-black bg-opacity-70 hover:bg-opacity-90 text-white transition-all duration-200 rounded-lg backdrop-blur-sm shadow-lg border border-white border-opacity-10 min-w-[44px] min-h-[44px] sm:min-w-[52px] sm:min-h-[52px]"
-              title="Apri immagine"
-            >
-              <ZoomIn className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="text-sm font-medium hidden sm:inline">Apri</span>
-            </button>
-          </div>
           </div>
         </div>
       )}

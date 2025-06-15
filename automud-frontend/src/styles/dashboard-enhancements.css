@@ -156,3 +156,224 @@ html {
     transform: translateY(-2px);
   }
 }
+
+/* 🚀 SWIPE OPTIMIZATIONS per Gallery e Modal */
+
+/* Gallery principale ottimizzazioni touch */
+.gallery-main-image {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Hardware acceleration per smooth swipe */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Thumbnails grid ottimizzazioni touch */
+.gallery-thumbnails {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Smooth scrolling orizzontale */
+  scroll-behavior: smooth;
+}
+
+/* Modal immagine zoomata ottimizzazioni */
+.image-modal-container {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: pan-x;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* 📱 SWIPE INDICATORS styling */
+.swipe-indicator {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  animation: swipe-pulse 2s ease-in-out infinite;
+}
+
+@keyframes swipe-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+/* Touch feedback per zone invisibili */
+.touch-zone {
+  position: relative;
+  overflow: hidden;
+}
+
+.touch-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.05);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.touch-zone:active::before {
+  opacity: 1;
+}
+
+/* 🎯 MOBILE OPTIMIZATIONS */
+@media (hover: none) and (pointer: coarse) {
+  
+  /* Mostra sempre i controlli su touch devices */
+  .gallery-controls,
+  .modal-controls {
+    opacity: 1 !important;
+  }
+  
+  /* Aumenta le aree touch */
+  .gallery-nav-button,
+  .modal-nav-button {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  
+  /* Swipe indicators visibili solo su mobile */
+  .swipe-indicator {
+    display: block !important;
+  }
+  
+  /* Miglior feedback touch */
+  .gallery-thumbnail,
+  .gallery-dot {
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  
+  .gallery-thumbnail:active,
+  .gallery-dot:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Desktop only - nascondi indicatori swipe */
+@media (hover: hover) and (pointer: fine) {
+  .swipe-indicator {
+    display: none !important;
+  }
+  
+  /* Hover states solo su desktop */
+  .gallery-main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .gallery-thumbnail:hover {
+    transform: scale(1.05);
+    border-color: #f97316;
+  }
+}
+
+/* 🔧 PERFORMANCE OPTIMIZATIONS */
+.gallery-main-image,
+.modal-image {
+  /* Ottimizzazioni rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Per immagini grandi */
+  content-visibility: auto;
+  contain-intrinsic-size: 320px 240px;
+}
+
+/* Prevenzione overscroll durante swipe */
+.gallery-container,
+.modal-container {
+  overscroll-behavior: contain;
+  overflow: hidden;
+}
+
+/* 🎪 LOADING STATES per swipe */
+.swipe-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: swipe-shimmer 1.5s infinite;
+}
+
+@keyframes swipe-shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* 📐 SAFE AREAS per modal fullscreen */
+@supports(padding: max(0px)) {
+  .image-modal-container {
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+/* 🎯 ACCESSIBILITY IMPROVEMENTS */
+.gallery-nav-button:focus-visible,
+.modal-nav-button:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .swipe-indicator {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid white;
+  }
+  
+  .gallery-nav-button,
+  .modal-nav-button {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid white;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-main-image,
+  .gallery-thumbnail,
+  .modal-image {
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .swipe-indicator {
+    animation: none !important;
+  }
+}
