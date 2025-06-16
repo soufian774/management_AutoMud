@@ -10,7 +10,9 @@
  * - DELETE /api/request/:id/images           → elimina tutte le immagini
  */
 
+import { downloadZip } from '../controllers/zip.controller';
 import { Router } from 'express';
+
 import { 
   uploadImages,
   getImages,
@@ -22,6 +24,9 @@ import {
 } from '../controllers/image.controller';
 
 const imageRouter = Router();
+
+
+imageRouter.post('/download-zip', downloadZip);
 
 // ✅ Ottieni elenco immagini per una richiesta
 imageRouter.get('/request/:id/images', getImages);

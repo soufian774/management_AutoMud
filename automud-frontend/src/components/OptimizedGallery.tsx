@@ -1,7 +1,8 @@
-// src/components/OptimizedGallery.tsx - AGGIORNATO con swipe touch
+// src/components/OptimizedGallery.tsx - VERSIONE CORRETTA CON ZIP BACKEND
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
-import { FileText, Camera, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react'
+import { FileText, Camera, ZoomIn, ChevronLeft, ChevronRight, Download, Package } from 'lucide-react'
+import { API_BASE_URL } from '@/lib/api'
 
 // 🚀 LAZY IMAGE SUPER OTTIMIZZATA
 interface LazyImageProps {
@@ -235,7 +236,7 @@ interface OptimizedGalleryProps {
   onImageSelect?: (index: number) => void
 }
 
-// 🖼️ COMPONENTE GALLERY OTTIMIZZATO CON SWIPE
+// 🖼️ COMPONENTE GALLERY OTTIMIZZATO CON ZIP DOWNLOAD BACKEND
 export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({ 
   images, 
   requestId, 
@@ -254,6 +255,7 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
   const setSelectedImageIndex = onImageSelect || setInternalSelectedIndex
   
   const [currentPage, setCurrentPage] = useState(0)
+  const [isDownloading, setIsDownloading] = useState(false)
   
   const totalPages = Math.ceil(images.length / IMAGES_PER_PAGE)
   
@@ -340,6 +342,56 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
       timeThreshold: 400
     }
   )
+
+  // 🆕 FUNZIONE DOWNLOAD ZIP - VERSIONE BACKEND CORRETTA
+  const handleDownloadZip = useCallback(async () => {
+  if (isDownloading || images.length === 0) return;
+
+  setIsDownloading(true);
+  console.log('🔄 Avvio download ZIP');
+
+  try {
+    const auth = localStorage.getItem('automud_auth');
+    if (!auth) throw new Error('Autenticazione mancante');
+
+    const files = images.map((imageName: string) => `${requestId}/${imageName}`);
+
+    const response = await fetch(`${API_BASE_URL}/api/download-zip`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${auth}`
+      },
+      body: JSON.stringify({ files }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Errore HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const fileName = `${requestId}_immagini.zip`;
+    const downloadUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+
+    console.log('✅ ZIP scaricato con successo:', fileName);
+  } catch (error) {
+    console.error('❌ Errore durante il download ZIP:', error);
+    alert(`Errore ZIP: ${error instanceof Error ? error.message : 'errore generico'}`);
+  } finally {
+    setIsDownloading(false);
+  }
+}, [images, requestId, isDownloading]);
+
+
 
   if (images.length === 0) {
     return (
@@ -477,94 +529,182 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
             }
           </div>
           
-          {/* 🎯 CONTROLLI PAGINAZIONE */}
+          {/* 🆕 PAGINAZIONE OTTIMIZZATA - Layout migliorato per tante immagini */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-slate-700/30 p-2 lg:p-3 rounded-lg">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToPrevious}
-                disabled={currentPage === 0}
-                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="hidden lg:inline ml-1">Prec</span>
-              </Button>
-              
-              <div className="flex items-center gap-2">
-                <span className="text-white text-sm font-medium">
-                  Pagina {currentPage + 1} di {totalPages}
-                </span>
+            <div className="space-y-3">
+              {/* Info e controlli principali */}
+              <div className="flex items-center justify-between bg-slate-700/30 p-3 rounded-lg">
+                <Button
+                  onClick={goToPrevious}
+                  disabled={currentPage === 0}
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation flex items-center gap-1"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Prec</span>
+                </Button>
                 
-                {/* Indicatori pagina per desktop */}
-                <div className="hidden lg:flex gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageIndex: number
-                    if (totalPages <= 5) {
-                      pageIndex = i
-                    } else if (currentPage <= 2) {
-                      pageIndex = i
-                    } else if (currentPage >= totalPages - 3) {
-                      pageIndex = totalPages - 5 + i
-                    } else {
-                      pageIndex = currentPage - 2 + i
-                    }
-                    
-                    return (
-                      <button
-                        key={pageIndex}
-                        onClick={() => {
-                          setCurrentPage(pageIndex)
-                          setSelectedImageIndex(pageIndex * IMAGES_PER_PAGE)
-                        }}
-                        className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
-                          currentPage === pageIndex
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-slate-600 text-slate-300 hover:bg-slate-500'
-                        }`}
-                      >
-                        {pageIndex + 1}
-                      </button>
-                    )
-                  })}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-white text-sm font-medium">
+                    Pagina {currentPage + 1} di {totalPages}
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Img {(currentPage * IMAGES_PER_PAGE) + 1}-{Math.min((currentPage + 1) * IMAGES_PER_PAGE, images.length)} di {images.length}
+                  </span>
                 </div>
+                
+                <Button
+                  onClick={goToNext}
+                  disabled={currentPage === totalPages - 1}
+                  variant="outline"
+                  size="sm"
+                  className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation flex items-center gap-1"
+                >
+                  <span className="hidden sm:inline">Succ</span>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={goToNext}
-                disabled={currentPage === totalPages - 1}
-                className="bg-slate-600 border-slate-500 text-white hover:bg-slate-500 disabled:opacity-50 touch-manipulation"
-              >
-                <span className="hidden lg:inline mr-1">Succ</span>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+
+              {/* 🆕 INDICATORI PAGINA SMART - Adattivo per tante pagine */}
+              {totalPages > 2 && (
+                <div className="flex justify-center">
+                  <div className="flex items-center gap-1 bg-slate-700/20 p-2 rounded-lg">
+                    {(() => {
+                      const indicators = []
+                      const maxVisible = Math.min(7, totalPages) // Max 7 indicatori visibili
+                      
+                      if (totalPages <= 7) {
+                        // Mostra tutti se sono pochi
+                        for (let i = 0; i < totalPages; i++) {
+                          indicators.push(
+                            <Button
+                              key={i}
+                              onClick={() => {
+                                setCurrentPage(i)
+                                setSelectedImageIndex(i * IMAGES_PER_PAGE)
+                              }}
+                              variant={currentPage === i ? "default" : "outline"}
+                              size="sm"
+                              className={`w-8 h-8 p-0 text-xs transition-all touch-manipulation ${
+                                currentPage === i 
+                                  ? "bg-orange-500 border-orange-500 text-white hover:bg-orange-600" 
+                                  : "bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                              }`}
+                            >
+                              {i + 1}
+                            </Button>
+                          )
+                        }
+                      } else {
+                        // Sistema intelligente per tante pagine
+                        const start = Math.max(0, currentPage - 3)
+                        const end = Math.min(totalPages, start + 7)
+                        
+                        // Prima pagina
+                        if (start > 0) {
+                          indicators.push(
+                            <Button
+                              key={0}
+                              onClick={() => {
+                                setCurrentPage(0)
+                                setSelectedImageIndex(0)
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="w-8 h-8 p-0 text-xs bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                            >
+                              1
+                            </Button>
+                          )
+                          if (start > 1) {
+                            indicators.push(<span key="dots1" className="text-slate-500 text-xs">...</span>)
+                          }
+                        }
+                        
+                        // Pagine centrali
+                        for (let i = start; i < end; i++) {
+                          indicators.push(
+                            <Button
+                              key={i}
+                              onClick={() => {
+                                setCurrentPage(i)
+                                setSelectedImageIndex(i * IMAGES_PER_PAGE)
+                              }}
+                              variant={currentPage === i ? "default" : "outline"}
+                              size="sm"
+                              className={`w-8 h-8 p-0 text-xs transition-all touch-manipulation ${
+                                currentPage === i 
+                                  ? "bg-orange-500 border-orange-500 text-white hover:bg-orange-600" 
+                                  : "bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                              }`}
+                            >
+                              {i + 1}
+                            </Button>
+                          )
+                        }
+                        
+                        // Ultima pagina
+                        if (end < totalPages) {
+                          if (end < totalPages - 1) {
+                            indicators.push(<span key="dots2" className="text-slate-500 text-xs">...</span>)
+                          }
+                          indicators.push(
+                            <Button
+                              key={totalPages - 1}
+                              onClick={() => {
+                                setCurrentPage(totalPages - 1)
+                                setSelectedImageIndex((totalPages - 1) * IMAGES_PER_PAGE)
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="w-8 h-8 p-0 text-xs bg-slate-700 border-slate-600 text-white hover:bg-slate-600"
+                            >
+                              {totalPages}
+                            </Button>
+                          )
+                        }
+                      }
+                      
+                      return indicators
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          
-          {/* Info e statistiche */}
-          <div className="flex justify-between items-center text-xs text-slate-400">
-            <span>
-              Mostrando {currentPageImages.length} di {images.length} immagini
-            </span>
-            {totalPages > 1 && (
-              <span>
-                Img {(currentPage * IMAGES_PER_PAGE) + 1}-{Math.min((currentPage + 1) * IMAGES_PER_PAGE, images.length)}
-              </span>
-            )}
-          </div>
         </div>
         
-        {/* Pulsante gestione */}
-        <Button 
-          onClick={onManageClick}
-          variant="outline" 
-          className="w-full mt-4 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-        >
-          <Camera className="h-4 w-4 mr-2" />
-          Gestisci Immagini
-        </Button>
+        {/* 🆕 PULSANTI GESTIONE - Con Download ZIP Backend */}
+        <div className="flex gap-2 mt-4">
+          <Button 
+            onClick={onManageClick}
+            variant="outline" 
+            className="flex-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Gestisci Immagini
+          </Button>
+          
+          <Button 
+            onClick={handleDownloadZip}
+            disabled={isDownloading || images.length === 0}
+            variant="outline"
+            className="flex-1 bg-orange-600/20 border-orange-500/50 text-orange-400 hover:bg-orange-600/30 hover:border-orange-500 hover:text-orange-300 touch-manipulation disabled:opacity-50"
+          >
+            {isDownloading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-2" />
+                Generando...
+              </>
+            ) : (
+              <>
+                <Package className="h-4 w-4 mr-2" />
+                Scarica ZIP
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   )

@@ -1,11 +1,12 @@
-// src/pages/Dashboard.tsx
+// src/pages/Dashboard.tsx - FIX WARNINGS
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { RequestCard } from '@/components/RequestCard'
+import ShareModal from '@/components/ShareModal'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { LogOut, ArrowLeft, ArrowRight, Search, Menu, X } from 'lucide-react'
-import { type AutoRequest } from '@/lib/types'
+import { type AutoRequest, type CompleteRequestDetail } from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
 
 const Dashboard = () => {
@@ -16,7 +17,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  //Inizializza page dal parametro URL se presente
+  
+  // Inizializza page dal parametro URL se presente
   const [page, setPage] = useState(() => {
     const urlPage = searchParams.get('page')
     return urlPage ? parseInt(urlPage, 10) : 1
@@ -26,10 +28,46 @@ const Dashboard = () => {
   const [pageInput, setPageInput] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   
+  // 🆕 STATI PER SHAREMODAL
+  const [shareModalRequest, setShareModalRequest] = useState<CompleteRequestDetail | null>(null)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  
   // Debounce per la ricerca
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
 
   const limit = 12
+
+  // 🔧 FIX: Cleanup identico a RequestDetail
+  useEffect(() => {
+    return () => {
+      // Cleanup body styles quando il componente si smonta
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = 'unset'
+        document.documentElement.style.overflow = 'unset'
+      }
+    }
+  }, [])
+
+  // 🔧 FIX: Gestione modal aperto/chiuso come RequestDetail
+  useEffect(() => {
+    if (isShareModalOpen) {
+      // Disabilita scroll della pagina quando modal è aperto
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+    } else {
+      // Riabilita scroll quando modal è chiuso
+      document.body.style.overflow = 'unset'
+      document.documentElement.style.overflow = 'unset'
+    }
+    
+    // Cleanup quando l'effect cambia
+    return () => {
+      if (!isShareModalOpen) {
+        document.body.style.overflow = 'unset'
+        document.documentElement.style.overflow = 'unset'
+      }
+    }
+  }, [isShareModalOpen])
 
   // 🔧 ANTI-ZOOM REFRESH: Prevenzione refresh accidentale
   useEffect(() => {
@@ -185,8 +223,50 @@ const Dashboard = () => {
 
   const handleView = (req: AutoRequest) => {
     console.log('📖 Navigando a dettaglio richiesta:', req.Id)
-    //Aggiungi la pagina corrente come parametro URL
+    // Aggiungi la pagina corrente come parametro URL
     navigate(`/request/${req.Id}?page=${page}`)
+  }
+
+  // 🆕 FUNZIONE PER CONDIVISIONE - FIXED per mobile scroll
+  const handleShare = (req: AutoRequest) => {
+    console.log('🔗 Apertura modal condivisione per:', req.Id)
+    
+    // Creiamo un oggetto CompleteRequestDetail completo per il ShareModal
+    const completeRequest: CompleteRequestDetail = {
+      ...req,
+      Management: undefined,  
+      Offers: [],
+      StatusHistory: [],
+      CurrentStatus: undefined  
+    }
+    
+    setShareModalRequest(completeRequest)
+    setIsShareModalOpen(true)
+    
+    // 🔧 FIX: Gestione overflow come in RequestDetail
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = 'hidden'
+        // Non settiamo position fixed che può causare problemi
+        document.documentElement.style.overflow = 'hidden'
+      }
+    }, 0)
+  }
+
+  // 🔧 FIX: Funzione per chiudere modal con cleanup identico a RequestDetail
+  const handleCloseShareModal = () => {
+    setIsShareModalOpen(false)
+    setShareModalRequest(null)
+    
+    // Ripristina scroll esattamente come RequestDetail
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = 'unset'
+        document.documentElement.style.overflow = 'unset'
+        // Forza reflow
+        document.body.offsetHeight
+      }
+    }, 100)
   }
 
   const handleLogout = () => {
@@ -204,7 +284,11 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dashboard-page" style={{
+      // Previeni interferenza CSS quando modal è aperto
+      transform: isShareModalOpen ? 'translateZ(0)' : 'none',
+      isolation: isShareModalOpen ? 'isolate' : 'auto'
+    }}>
       {/* 🔧 INLINE STYLES per prevenire zoom indesiderato */}
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -355,7 +439,12 @@ const Dashboard = () => {
             {/* Grid - Responsive with touch optimization */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
               {requests.map((req) => (
-                <RequestCard key={req.Id} request={req} onView={handleView} />
+                <RequestCard 
+                  key={req.Id} 
+                  request={req} 
+                  onView={handleView}
+                  onShare={handleShare}
+                />
               ))}
             </div>
 
@@ -501,15 +590,16 @@ const Dashboard = () => {
                       }
                       pages.push(
                         <Button
+                          key={totalPages}
                           size="sm"
                           onClick={() => {
                             setPage(totalPages)
                             setSearchParams({ page: totalPages.toString() })
                           }}
                           disabled={page === totalPages}
-                          className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600"
+                          className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 w-8"
                         >
-                          »»
+                          {totalPages}
                         </Button>
                       );
                     }
@@ -601,6 +691,28 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* 🆕 SHAREMODAL - Con fix touch-action per single-finger scroll */}
+      {shareModalRequest && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
+          bottom: 0, 
+          zIndex: 9999,
+          isolation: 'isolate',
+          // Fix per single-finger scroll
+          touchAction: 'auto',
+          WebkitOverflowScrolling: 'touch'
+        }}>
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={handleCloseShareModal}
+            request={shareModalRequest}
+          />
+        </div>
+      )}
     </div>
   )
 }

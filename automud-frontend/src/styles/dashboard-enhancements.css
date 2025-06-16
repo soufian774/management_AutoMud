@@ -377,3 +377,30 @@ html {
     animation: none !important;
   }
 }
+
+/* FIX: Single-finger scroll nel ShareModal dal Dashboard */
+.dashboard-page [data-radix-dialog-content] {
+  /* Permetti single-touch scroll */
+  touch-action: pan-y !important;
+  
+  /* iOS smooth scroll */
+  -webkit-overflow-scrolling: touch !important;
+  
+  /* Rimuovi gesture prevention */
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: auto !important;
+  
+  /* Scroll naturale */
+  overscroll-behavior-y: auto !important;
+}
+
+/* Fix per il contenitore del modal */
+.dashboard-page [data-radix-dialog-overlay] {
+  /* Permetti scroll verticale nel contenuto */
+  touch-action: pan-y !important;
+}
+
+/* Override per anti-zoom che potrebbe interferire */
+.dashboard-page [data-radix-dialog-content] * {
+  touch-action: inherit !important;
+}

@@ -1,13 +1,12 @@
-// src/components/RequestCard.tsx - Con Gallery Swipeable
+// AutoScout24 Style RequestCard.tsx - LAYOUT OTTIMIZZATO
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Calendar, Eye, Fuel, Image as ImageIcon, Settings2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Calendar, ChevronLeft, ChevronRight, Heart, Share, MapPin, Phone, User, Camera } from 'lucide-react';
 import { type AutoRequest, FuelTypeEnum, TransmissionTypeEnum, CarConditionEnum, EngineConditionEnum } from '@/lib/types';
 
 interface Props {
   request: AutoRequest;
   onView: (req: AutoRequest) => void;
+  onShare?: (req: AutoRequest) => void;
 }
 
 // 🚀 HOOK PER SWIPE GESTURES
@@ -16,7 +15,7 @@ const useSwipeGesture = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
   const [touchEnd, setTouchEnd] = useState<{ x: number; y: number } | null>(null)
 
   const minSwipeDistance = 50
-  const maxVerticalDistance = 100 // Previene swipe verticali accidentali
+  const maxVerticalDistance = 100
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null)
@@ -39,7 +38,6 @@ const useSwipeGesture = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
     const distanceX = touchStart.x - touchEnd.x
     const distanceY = Math.abs(touchStart.y - touchEnd.y)
     
-    // Ignora se movimento troppo verticale
     if (distanceY > maxVerticalDistance) return
     
     const isLeftSwipe = distanceX > minSwipeDistance
@@ -52,7 +50,7 @@ const useSwipeGesture = (onSwipeLeft: () => void, onSwipeRight: () => void) => {
   return { onTouchStart, onTouchMove, onTouchEnd }
 }
 
-// 🎯 LAZY IMAGE PER CARDS
+// 🎯 LAZY IMAGE COMPONENT - DARK THEME
 const LazyCardImage: React.FC<{
   src: string
   alt: string
@@ -88,7 +86,7 @@ const LazyCardImage: React.FC<{
     <div ref={imgRef} className={`relative ${className || ''}`}>
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 bg-slate-700/50 animate-pulse flex items-center justify-center">
-          <div className="w-8 h-8 bg-slate-600 rounded" />
+          <div className="w-12 h-12 bg-slate-600 rounded-full" />
         </div>
       )}
 
@@ -107,15 +105,15 @@ const LazyCardImage: React.FC<{
 
       {hasError && (
         <div className="absolute inset-0 bg-slate-700/50 flex items-center justify-center">
-          <ImageIcon className="h-8 w-8 text-slate-400" />
+          <Camera className="h-12 w-12 text-slate-400" />
         </div>
       )}
     </div>
   )
 }
 
-// 🖼️ GALLERY SWIPEABLE COMPONENT
-const SwipeableGallery: React.FC<{
+// 🖼️ GALLERY SWIPEABLE COMPONENT - AutoScout24 Style + DARK THEME
+const AutoScout24Gallery: React.FC<{
   images: string[]
   requestId: string
   getImageUrl: (id: string, name: string) => string
@@ -124,7 +122,6 @@ const SwipeableGallery: React.FC<{
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isNavigating, setIsNavigating] = useState(false)
 
-  // Navigation functions
   const goToPrevious = useCallback(() => {
     if (isNavigating) return
     setIsNavigating(true)
@@ -139,13 +136,15 @@ const SwipeableGallery: React.FC<{
     setTimeout(() => setIsNavigating(false), 300)
   }, [images.length, isNavigating])
 
-  // Swipe gesture hook
   const swipeHandlers = useSwipeGesture(goToNext, goToPrevious)
 
   if (images.length === 0) {
     return (
       <div className={`relative bg-slate-700/50 flex items-center justify-center ${className}`}>
-        <ImageIcon className="text-slate-400 w-8 sm:w-12 h-8 sm:h-12" />
+        <div className="text-center">
+          <Camera className="h-16 w-16 text-slate-400 mx-auto mb-2" />
+          <p className="text-slate-400 text-sm">Nessuna immagine</p>
+        </div>
       </div>
     )
   }
@@ -156,7 +155,7 @@ const SwipeableGallery: React.FC<{
         <LazyCardImage
           src={getImageUrl(requestId, images[0])}
           alt="Immagine veicolo"
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover"
           priority={true}
         />
       </div>
@@ -172,21 +171,21 @@ const SwipeableGallery: React.FC<{
       <LazyCardImage
         src={getImageUrl(requestId, images[currentIndex])}
         alt={`Immagine ${currentIndex + 1}`}
-        className="w-full h-full object-cover object-center transition-transform duration-300 hover:scale-105"
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         priority={currentIndex === 0}
       />
 
-      {/* Overlay gradiente */}
+      {/* Overlay gradiente scuro */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
 
-      {/* Controlli navigazione - Visibili solo su hover/touch */}
+      {/* Controlli navigazione - DARK STYLE */}
       <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <button
           onClick={(e) => {
             e.stopPropagation()
             goToPrevious()
           }}
-          className="bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-colors touch-manipulation z-10"
+          className="bg-black/60 hover:bg-black/80 text-white p-2 rounded-full shadow-lg transition-all touch-manipulation z-10 backdrop-blur-sm"
           disabled={isNavigating}
           aria-label="Immagine precedente"
         >
@@ -198,7 +197,7 @@ const SwipeableGallery: React.FC<{
             e.stopPropagation()
             goToNext()
           }}
-          className="bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-colors touch-manipulation z-10"
+          className="bg-black/60 hover:bg-black/80 text-white p-2 rounded-full shadow-lg transition-all touch-manipulation z-10 backdrop-blur-sm"
           disabled={isNavigating}
           aria-label="Immagine successiva"
         >
@@ -206,8 +205,13 @@ const SwipeableGallery: React.FC<{
         </button>
       </div>
 
-      {/* Indicatori dots - Mobile friendly */}
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+      {/* Contatore immagini - DARK STYLE */}
+      <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm px-2 py-1 rounded text-white text-xs font-medium">
+        {currentIndex + 1}/{images.length}
+      </div>
+
+      {/* Indicatori dots */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
         {images.slice(0, 5).map((_, index) => (
           <button
             key={index}
@@ -215,39 +219,35 @@ const SwipeableGallery: React.FC<{
               e.stopPropagation()
               setCurrentIndex(index)
             }}
-            className={`w-1.5 h-1.5 rounded-full transition-all touch-manipulation ${
+            className={`w-2 h-2 rounded-full transition-all touch-manipulation ${
               index === currentIndex
                 ? 'bg-white scale-110'
                 : 'bg-white/60 hover:bg-white/80'
             }`}
-            aria-label={`Vai all'immagine ${index + 1}`}
           />
         ))}
         {images.length > 5 && (
-          <div className="w-1.5 h-1.5 rounded-full bg-white/40 flex items-center justify-center">
-            <span className="text-[8px] text-white font-bold">+</span>
+          <div className="w-2 h-2 rounded-full bg-white/40">
+            <span className="sr-only">+{images.length - 5} altre</span>
           </div>
         )}
-      </div>
-
-      {/* Contatore immagini - Top right */}
-      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded text-white text-xs font-medium">
-        {currentIndex + 1}/{images.length}
-      </div>
-
-      {/* Indicatore swipe per mobile - Solo se touch device */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/70 text-xs hidden touch:block">
-        ← Swipe →
       </div>
     </div>
   )
 }
 
-export function RequestCard({ request, onView }: Props) {
+export function RequestCard({ request, onView, onShare }: Props) {
   const getImageUrl = (id: string, name: string) =>
     `https://automudblobstorage.blob.core.windows.net/automudformimages/${id}/${name}`;
 
   const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+  const formatDateTime = (date: string) =>
     new Date(date).toLocaleString('it-IT', {
       day: '2-digit',
       month: '2-digit',
@@ -256,106 +256,155 @@ export function RequestCard({ request, onView }: Props) {
       minute: '2-digit'
     });
 
-  // Funzioni per i colori corrette (adattate ai tuoi enum)
-  const getCarConditionColor = (code: number) => {
-    switch (code) {
-      case 30: return 'default';      // 'Usato' = Verde (migliore)
-      case 20: return 'secondary';    // 'Guasto' = Giallo (medio)  
-      case 10: return 'destructive';  // 'Incidentato' = Rosso (peggiore)
-      default: return 'outline';      // 'N/A'
-    }
-  };
-
-  const getEngineConditionColor = (code: number) => {
-    switch (code) {
-      case 10: return 'default';      // 'Avvia e si muove' = Verde (migliore)
-      case 20: return 'secondary';    // 'Avvia ma non si muove' = Giallo (medio)
-      case 30: return 'destructive';  // 'Non avvia' = Rosso (peggiore)
-      default: return 'outline';      // 'N/A'
+  const getConditionColor = (condition: number, type: 'car' | 'engine') => {
+    if (type === 'car') {
+      switch (condition) {
+        case 30: return 'text-green-400'; // Usato
+        case 20: return 'text-yellow-400'; // Guasto  
+        case 10: return 'text-red-400'; // Incidentato
+        default: return 'text-slate-400';
+      }
+    } else {
+      switch (condition) {
+        case 10: return 'text-green-400'; // Avvia e si muove
+        case 20: return 'text-yellow-400'; // Avvia ma non si muove
+        case 30: return 'text-red-400'; // Non avvia
+        default: return 'text-slate-400';
+      }
     }
   };
 
   return (
-    <div className="rounded-lg overflow-hidden bg-slate-800/90 border border-slate-700/50 hover:border-orange-500/70 hover:shadow-xl hover:shadow-orange-500/10 transition-all duration-300 backdrop-blur-sm">
+    <div 
+      className="bg-slate-800/90 rounded-lg shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-700/50 hover:border-orange-500/70 backdrop-blur-sm cursor-pointer hover:scale-[1.02]"
+      onClick={() => onView(request)}
+    >
       
-      {/* Gallery Swipeable - Responsive aspect ratio */}
+      {/* Gallery - AutoScout24 Style + DARK */}
       <div className="relative">
-        <SwipeableGallery
+        <AutoScout24Gallery
           images={request.Images}
           requestId={request.Id}
           getImageUrl={getImageUrl}
-          className="aspect-[4/3] sm:aspect-[4/3] lg:aspect-[4/3]"
+          className="aspect-[4/3] w-full"
         />
-
-        {/* Badge ID richiesta - Mobile friendly */}
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 z-20">
-          <Badge variant="secondary" className="bg-orange-500/90 backdrop-blur-sm text-white border-0 font-semibold shadow-lg text-xs sm:text-sm">
-            {request.Id}
-          </Badge>
-        </div>
-
-        {/* Badge prezzo - Mobile responsive */}
-        <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 z-20">
-          <Badge className="bg-green-500/90 backdrop-blur-sm text-white border-0 font-bold text-xs sm:text-sm shadow-lg">
-            € {request.DesiredPrice.toLocaleString('it-IT')}
-          </Badge>
-        </div>
       </div>
 
-      {/* Contenuto card - Mobile optimized */}
-      <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
-        {/* Titolo veicolo - Mobile responsive */}
-        <div>
-          <h3 className="text-base sm:text-lg font-bold text-white leading-tight">
-            {request.Make} {request.Model}
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Anno {request.RegistrationYear} • {request.Km.toLocaleString()} km
-          </p>
-        </div>
-
-        {/* Dettagli tecnici - Mobile stack vertically */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-slate-300">
-          <div className="flex items-center gap-1">
-            <Fuel className="w-3 sm:w-4 h-3 sm:h-4 text-slate-400 flex-shrink-0" />
-            <span className="truncate">{FuelTypeEnum[request.FuelType]}</span>
+      {/* Content - AutoScout24 Layout + DARK THEME + LAYOUT OTTIMIZZATO */}
+      <div className="p-4 space-y-4">
+        
+        {/* Titolo principale con azioni - come AutoScout24 */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-white leading-tight">
+              {request.Make} {request.Model}
+            </h3>
+            {/* 🆕 DATA E ORA RICHIESTA al posto di carburante/cambio/anno - Mobile responsive */}
+            <div className="flex items-center gap-2 mt-1">
+              <Calendar className="h-3 w-3 text-slate-400 flex-shrink-0" />
+              <p className="text-slate-400 text-sm truncate">
+                <span className="hidden sm:inline">Richiesta: </span>{formatDateTime(request.DateTime)}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Settings2 className="w-3 sm:w-4 h-3 sm:h-4 text-slate-400 flex-shrink-0" />
-            <span className="truncate">{TransmissionTypeEnum[request.TransmissionType]}</span>
+          
+          {/* Actions accanto al titolo */}
+          <div className="flex gap-2 ml-3 flex-shrink-0">
+            <button 
+              className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-full shadow-lg transition-all touch-manipulation border border-slate-600"
+              onClick={(e) => {
+                e.stopPropagation()
+                window.location.href = `tel:${request.Phone}`
+              }}
+              title={`Chiama ${request.FirstName} ${request.LastName}`}
+            >
+              <Phone className="h-4 w-4" />
+            </button>
+            <button 
+              className="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-full shadow-lg transition-all touch-manipulation border border-slate-600"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (onShare) {
+                  onShare(request)
+                } else {
+                  console.log('Condividi non configurato per:', request.Id)
+                }
+              }}
+              title="Condividi richiesta"
+            >
+              <Share className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        {/* Condizioni - Mobile friendly badges */}
-        <div className="flex gap-1 sm:gap-2 flex-wrap">
-          <Badge variant={getCarConditionColor(request.CarCondition)} className="text-xs">
-            {CarConditionEnum[request.CarCondition]}
-          </Badge>
-          <Badge variant={getEngineConditionColor(request.EngineCondition)} className="text-xs">
-            {EngineConditionEnum[request.EngineCondition]}
-          </Badge>
-        </div>
-
-        {/* Informazioni di contesto - Mobile compact */}
-        <div className="space-y-1 text-xs sm:text-sm">
-          <div className="flex items-center gap-1 text-slate-400">
-            <Calendar className="w-3 sm:w-4 h-3 sm:h-4 flex-shrink-0" />
-            <span className="truncate">{formatDate(request.DateTime)}</span>
+        {/* Prezzo prominente - stile AutoScout24 + GREEN */}
+        <div className="flex items-baseline justify-between">
+          <div>
+            <span className="text-2xl font-bold text-green-400">
+              €{request.DesiredPrice.toLocaleString('it-IT')}
+            </span>
+            <span className="text-sm text-slate-500 ml-2">prezzo richiesto</span>
           </div>
-          <p className="text-slate-400 truncate">📍 {request.City}</p>
-          <p className="text-slate-200 font-medium truncate">
-            {request.FirstName} {request.LastName}
-          </p>
         </div>
 
-        {/* Bottone azione - Mobile full width */}
-        <Button
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white border-0 font-semibold transition-colors duration-200 text-sm sm:text-base py-2 sm:py-2.5"
-          onClick={() => onView(request)}
-        >
-          <Eye className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
-          Visualizza Dettagli
-        </Button>
+        {/* 🆕 DETTAGLI TECNICI OTTIMIZZATI - Layout mobile-friendly */}
+        <div className="border-t border-slate-600 pt-3">
+          {/* Desktop: griglia 2 colonne, Mobile: stack verticale */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 sm:gap-y-2 sm:gap-x-4 text-sm">
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Chilometraggio:</span>
+              <span className="font-medium text-white">{request.Km.toLocaleString()} km</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Anno:</span>
+              <span className="font-medium text-white">{request.RegistrationYear}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Cilindrata:</span>
+              <span className="font-medium text-white">{request.EngineSize} cc</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Targa:</span>
+              <span className="font-medium text-white">{request.LicensePlate}</span>
+            </div>
+            {/* 🆕 CARBURANTE E CAMBIO SPOSTATI QUI */}
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Carburante:</span>
+              <span className="font-medium text-white text-sm">{FuelTypeEnum[request.FuelType]}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Cambio:</span>
+              <span className="font-medium text-white text-sm">{TransmissionTypeEnum[request.TransmissionType]}</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Condizioni:</span>
+              <span className={`font-medium text-sm ${getConditionColor(request.CarCondition, 'car')}`}>
+                {CarConditionEnum[request.CarCondition]}
+              </span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span className="text-slate-400">Motore:</span>
+              <span className={`font-medium text-sm ${getConditionColor(request.EngineCondition, 'engine')}`}>
+                {EngineConditionEnum[request.EngineCondition]}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 🆕 INFO CLIENTE E LOCATION OTTIMIZZATE - Mobile responsive */}
+        <div className="border-t border-slate-600 pt-3">
+          {/* Mobile: Stack verticale, Desktop: Nome e città sulla stessa riga */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm">
+            <div className="flex items-center gap-2 text-slate-300">
+              <User className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <span className="truncate">{request.FirstName} {request.LastName}</span>
+            </div>
+            <div className="flex items-center gap-2 text-slate-300">
+              <MapPin className="h-4 w-4 text-slate-400 flex-shrink-0" />
+              <span className="truncate">{request.City}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
