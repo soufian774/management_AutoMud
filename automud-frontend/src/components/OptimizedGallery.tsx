@@ -676,35 +676,35 @@ export const OptimizedGallery: React.FC<OptimizedGalleryProps> = ({
         </div>
         
         {/* 🆕 PULSANTI GESTIONE - Con Download ZIP Backend */}
-        <div className="flex gap-2 mt-4">
-          <Button 
-            onClick={onManageClick}
-            variant="outline" 
-            className="flex-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-          >
-            <Camera className="h-4 w-4 mr-2" />
-            Gestisci Immagini
-          </Button>
-          
-          <Button 
-            onClick={handleDownloadZip}
-            disabled={isDownloading || images.length === 0}
-            variant="outline"
-            className="flex-1 bg-orange-600/20 border-orange-500/50 text-orange-400 hover:bg-orange-600/30 hover:border-orange-500 hover:text-orange-300 touch-manipulation disabled:opacity-50"
-          >
-            {isDownloading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-2" />
-                Generando...
-              </>
-            ) : (
-              <>
-                <Package className="h-4 w-4 mr-2" />
-                Scarica ZIP
-              </>
-            )}
-          </Button>
-        </div>
+        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+        <Button 
+          onClick={onManageClick}
+          variant="outline" 
+          className="w-full sm:flex-1 bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+        >
+          <Camera className="h-4 w-4 mr-2" />
+          Gestisci Immagini
+        </Button>
+
+        <Button 
+          onClick={handleDownloadZip}
+          disabled={isDownloading || images.length === 0}
+          variant="outline"
+          className="w-full sm:flex-1 bg-orange-600/20 border-orange-500/50 text-orange-400 hover:bg-orange-600/30 hover:border-orange-500 hover:text-orange-300 touch-manipulation disabled:opacity-50"
+        >
+          {isDownloading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin mr-2" />
+              Generando...
+            </>
+          ) : (
+            <>
+              <Package className="h-4 w-4 mr-2" />
+              Scarica ZIP
+            </>
+          )}
+        </Button>
+      </div>
       </div>
     </div>
   )
