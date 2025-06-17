@@ -27,7 +27,8 @@ import {
   updateRequestVehicle,
   addRequestOffer,
   updateRequestOffer,
-  deleteRequestOffer
+  deleteRequestOffer,
+  getStatusCountsController 
 } from '../controllers/request.controller';
 import { getTotalRequestCount } from '../services/request.service';
 
@@ -36,6 +37,8 @@ const requestRouter = Router();
 // ✅ Elenco richieste (con paginazione e ricerca)
 // Cambiato da /requests a /request
 requestRouter.get('/request', getRequests);
+
+requestRouter.get('/request/status-counts', getStatusCountsController);
 
 // ✅ Numero totale richieste
 // Spostato prima del parametro /:id per evitare conflitti di routing

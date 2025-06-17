@@ -1,8 +1,12 @@
+// src/controllers/request.controller.ts - VERSIONE CORRETTA SENZA ERRORI
+
 import { Request, Response, RequestHandler } from 'express';
 import {
   getRequestsPaged,
   getRequestById,
-  getTotalRequestCount
+  getTotalRequestCount,
+  getStatusCounts,
+  StatusFilter
 } from '../services/request.service';
 import {
   getStatusHistoryByRequestId,
@@ -28,7 +32,7 @@ import { pool } from '../db/pool';
 
 /**
  * GET /api/requests
- * Restituisce un elenco paginato di richieste con ricerca opzionale.
+ * Restituisce un elenco paginato di richieste con ricerca opzionale e filtri stati.
  */
 export const getRequests: RequestHandler = async (req: Request, res: Response): Promise<void> => {
   const DEFAULT_PAGE = 1;
@@ -37,6 +41,21 @@ export const getRequests: RequestHandler = async (req: Request, res: Response): 
   const page = parseInt(req.query.page as string, 10) || DEFAULT_PAGE;
   const limit = parseInt(req.query.limit as string, 10) || DEFAULT_LIMIT;
   const search = req.query.search as string | undefined;
+  
+  // 🆕 PARSING FILTRI STATI
+  const statusFilter: StatusFilter = {
+    all: req.query.all === 'true',
+    dChiamare: req.query.dChiamare === 'true',
+    inCorso: req.query.inCorso === 'true', 
+    pratiRitiro: req.query.pratiRitiro === 'true',
+    esitoFinale: req.query.esitoFinale === 'true'
+  };
+
+  // Se nessun filtro è attivo, mostra tutto
+  if (!statusFilter.all && !statusFilter.dChiamare && !statusFilter.inCorso && 
+      !statusFilter.pratiRitiro && !statusFilter.esitoFinale) {
+    statusFilter.all = true;
+  }
 
   if (page <= 0 || limit <= 0) {
     res.status(400).json({ error: 'Parametri di paginazione non validi' });
@@ -50,11 +69,11 @@ export const getRequests: RequestHandler = async (req: Request, res: Response): 
   }
 
   try {
-    console.log(`🔍 Fetching requests - Page: ${page}, Limit: ${limit}, Search: "${search || 'none'}"`);
+    console.log(`🔍 Fetching requests - Page: ${page}, Limit: ${limit}, Search: "${search || 'none'}", Filters:`, statusFilter);
 
     const [requests, total] = await Promise.all([
-      getRequestsPaged(page, limit, search),
-      getTotalRequestCount(search)
+      getRequestsPaged(page, limit, search, statusFilter),
+      getTotalRequestCount(search, statusFilter)
     ]);
 
     const totalPages = Math.ceil(total / limit);
@@ -71,10 +90,36 @@ export const getRequests: RequestHandler = async (req: Request, res: Response): 
         hasNext: page < totalPages,
         hasPrev: page > 1
       },
-      search: search || null
+      search: search || null,
+      filters: statusFilter
     });
   } catch (error) {
     console.error('❌ Errore nel recupero richieste:', error);
+    res.status(500).json({ error: 'Errore interno del server' });
+  }
+}
+
+/**
+ * 🆕 GET /api/requests/status-counts
+ * Restituisce i contatori per ogni stato
+ */
+export const getStatusCountsController: RequestHandler = async (req: Request, res: Response): Promise<void> => {
+  const search = req.query.search as string | undefined;
+
+  try {
+    console.log(`📊 Fetching status counts - Search: "${search || 'none'}"`);
+
+    const counts = await getStatusCounts(search);
+
+    console.log('✅ Status counts retrieved:', counts);
+
+    res.status(200).json({
+      success: true,
+      counts,
+      search: search || null
+    });
+  } catch (error) {
+    console.error('❌ Errore nel recupero contatori stati:', error);
     res.status(500).json({ error: 'Errore interno del server' });
   }
 }
@@ -464,7 +509,7 @@ export const updateRequestVehicle: RequestHandler = async (req: Request, res: Re
     let paramIndex = 1;
 
     if (licensePlate !== undefined) {
-      updateFields.push(`"LicensePlate" = $${paramIndex++}`);  // ✅ CORRETTO: $1, $2, etc.
+      updateFields.push(`"LicensePlate" = $${paramIndex++}`);
       updateValues.push(licensePlate);
     }
     if (km !== undefined) {
@@ -480,31 +525,31 @@ export const updateRequestVehicle: RequestHandler = async (req: Request, res: Re
       updateValues.push(engineSize);
     }
     if (fuelType !== undefined) {
-      updateFields.push(`"FuelType" = $${paramIndex++}`);
+      updateFields.push(`"FuelType" = ${paramIndex++}`);
       updateValues.push(fuelType);
     }
     if (transmissionType !== undefined) {
-      updateFields.push(`"TransmissionType" = $${paramIndex++}`);
+      updateFields.push(`"TransmissionType" = ${paramIndex++}`);
       updateValues.push(transmissionType);
     }
     if (carCondition !== undefined) {
-      updateFields.push(`"CarCondition" = $${paramIndex++}`);
+      updateFields.push(`"CarCondition" = ${paramIndex++}`);
       updateValues.push(carCondition);
     }
     if (engineCondition !== undefined) {
-      updateFields.push(`"EngineCondition" = $${paramIndex++}`);
+      updateFields.push(`"EngineCondition" = ${paramIndex++}`);
       updateValues.push(engineCondition);
     }
     if (interiorConditions !== undefined) {
-      updateFields.push(`"InteriorConditions" = $${paramIndex++}`);
+      updateFields.push(`"InteriorConditions" = ${paramIndex++}`);
       updateValues.push(interiorConditions);
     }
     if (exteriorConditions !== undefined) {
-      updateFields.push(`"ExteriorConditions" = $${paramIndex++}`);
+      updateFields.push(`"ExteriorConditions" = ${paramIndex++}`);
       updateValues.push(exteriorConditions);
     }
     if (mechanicalConditions !== undefined) {
-      updateFields.push(`"MechanicalConditions" = $${paramIndex++}`);
+      updateFields.push(`"MechanicalConditions" = ${paramIndex++}`);
       updateValues.push(mechanicalConditions);
     }
 
@@ -519,7 +564,7 @@ export const updateRequestVehicle: RequestHandler = async (req: Request, res: Re
     const query = `
       UPDATE "Requests"
       SET ${updateFields.join(', ')}
-      WHERE "Id" = $${paramIndex}
+      WHERE "Id" = ${paramIndex}
       RETURNING *
     `;
 

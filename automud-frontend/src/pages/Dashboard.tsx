@@ -1,11 +1,13 @@
-// src/pages/Dashboard.tsx - FIX WARNINGS
+// src/pages/Dashboard.tsx - AGGIORNATO con filtri stati + LOGO AUTOMUD
+
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { RequestCard } from '@/components/RequestCard'
 import ShareModal from '@/components/ShareModal'
-import { Input } from '@/components/ui/input'
+import StatusFilter from '@/components/StatusFilter';
+import type { StatusFilterState, StatusCounts } from '@/components/StatusFilter';import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { LogOut, ArrowLeft, ArrowRight, Search, Menu, X } from 'lucide-react'
+import { LogOut, ArrowLeft, ArrowRight, Search, Menu, X, Filter, Bell, User, RotateCcw } from 'lucide-react'
 import { type AutoRequest, type CompleteRequestDetail } from '@/lib/types'
 import { API_BASE_URL } from '@/lib/api'
 
@@ -18,6 +20,23 @@ const Dashboard = () => {
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   
+  // 🆕 STATI PER FILTRI
+  const [statusFilters, setStatusFilters] = useState<StatusFilterState>({
+    all: true,
+    dChiamare: false,
+    inCorso: false,
+    pratiRitiro: false,
+    esitoFinale: false
+  })
+  const [statusCounts, setStatusCounts] = useState<StatusCounts>({
+    all: 0,
+    dChiamare: 0,
+    inCorso: 0,
+    pratiRitiro: 0,
+    esitoFinale: 0
+  })
+  const [isLoadingCounts, setIsLoadingCounts] = useState(false)
+  
   // Inizializza page dal parametro URL se presente
   const [page, setPage] = useState(() => {
     const urlPage = searchParams.get('page')
@@ -27,8 +46,10 @@ const Dashboard = () => {
   const [totalResults, setTotalResults] = useState(0)
   const [pageInput, setPageInput] = useState('')
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false) // 🆕
+  const [showUserMenu, setShowUserMenu] = useState(false) // 🆕 Per dropdown menu
   
-  // 🆕 STATI PER SHAREMODAL
+  // Stati per ShareModal
   const [shareModalRequest, setShareModalRequest] = useState<CompleteRequestDetail | null>(null)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   
@@ -37,10 +58,9 @@ const Dashboard = () => {
 
   const limit = 12
 
-  // 🔧 FIX: Cleanup identico a RequestDetail
+  // Cleanup body styles
   useEffect(() => {
     return () => {
-      // Cleanup body styles quando il componente si smonta
       if (typeof window !== 'undefined') {
         document.body.style.overflow = 'unset'
         document.documentElement.style.overflow = 'unset'
@@ -48,19 +68,16 @@ const Dashboard = () => {
     }
   }, [])
 
-  // 🔧 FIX: Gestione modal aperto/chiuso come RequestDetail
+  // Gestione modal aperto/chiuso
   useEffect(() => {
     if (isShareModalOpen) {
-      // Disabilita scroll della pagina quando modal è aperto
       document.body.style.overflow = 'hidden'
       document.documentElement.style.overflow = 'hidden'
     } else {
-      // Riabilita scroll quando modal è chiuso
       document.body.style.overflow = 'unset'
       document.documentElement.style.overflow = 'unset'
     }
     
-    // Cleanup quando l'effect cambia
     return () => {
       if (!isShareModalOpen) {
         document.body.style.overflow = 'unset'
@@ -68,76 +85,6 @@ const Dashboard = () => {
       }
     }
   }, [isShareModalOpen])
-
-  // 🔧 ANTI-ZOOM REFRESH: Prevenzione refresh accidentale
-  useEffect(() => {
-    let lastTouchY = 0
-    let preventPullToRefresh = false
-
-    const handleTouchStart = (e: Event) => {
-      const touchEvent = e as TouchEvent
-      if (touchEvent.touches.length !== 1) return
-      lastTouchY = touchEvent.touches[0].clientY
-      
-      // Previeni pull-to-refresh se siamo in cima e stiamo scrollando verso il basso
-      preventPullToRefresh = window.scrollY === 0
-    }
-
-    const handleTouchMove = (e: Event) => {
-      const touchEvent = e as TouchEvent
-      if (touchEvent.touches.length !== 1) return
-      
-      const touchY = touchEvent.touches[0].clientY
-      const touchYDelta = touchY - lastTouchY
-      lastTouchY = touchY
-
-      if (preventPullToRefresh) {
-        // Previeni il pull-to-refresh se stiamo scrollando verso il basso dalla cima
-        if (touchYDelta > 0) {
-          e.preventDefault()
-          return false
-        }
-      }
-    }
-
-    const handleTouchEnd = () => {
-      preventPullToRefresh = false
-    }
-
-    // Previeni zoom accidentale con doppio tap su iOS
-    const handleTouchStartAntiZoom = (e: Event) => {
-      const touchEvent = e as TouchEvent
-      if (touchEvent.touches.length > 1) {
-        e.preventDefault()
-      }
-    }
-
-    // Aggiungi listener solo su dispositivi mobili
-    if ('ontouchstart' in window) {
-      document.addEventListener('touchstart', handleTouchStart, { passive: false })
-      document.addEventListener('touchmove', handleTouchMove, { passive: false })
-      document.addEventListener('touchend', handleTouchEnd, { passive: true })
-      
-      // Anti-zoom solo su elementi non interattivi
-      const nonInteractiveElements = document.querySelectorAll('div:not([role]), span, p, h1, h2, h3, h4, h5, h6')
-      nonInteractiveElements.forEach(el => {
-        el.addEventListener('touchstart', handleTouchStartAntiZoom, { passive: false })
-      })
-    }
-
-    return () => {
-      if ('ontouchstart' in window) {
-        document.removeEventListener('touchstart', handleTouchStart)
-        document.removeEventListener('touchmove', handleTouchMove)
-        document.removeEventListener('touchend', handleTouchEnd)
-        
-        const nonInteractiveElements = document.querySelectorAll('div:not([role]), span, p, h1, h2, h3, h4, h5, h6')
-        nonInteractiveElements.forEach(el => {
-          el.removeEventListener('touchstart', handleTouchStartAntiZoom)
-        })
-      }
-    }
-  }, [])
 
   // Verifica autenticazione al mount
   useEffect(() => {
@@ -160,6 +107,44 @@ const Dashboard = () => {
     return () => clearTimeout(timer)
   }, [searchTerm, debouncedSearchTerm])
 
+  // 🆕 FUNZIONE PER CARICARE CONTATORI STATI
+  const fetchStatusCounts = async () => {
+    setIsLoadingCounts(true)
+    try {
+      const auth = localStorage.getItem('automud_auth')
+      if (!auth) return
+
+      const params = new URLSearchParams()
+      if (debouncedSearchTerm.trim()) {
+        params.append('search', debouncedSearchTerm.trim())
+      }
+
+      const url = `${API_BASE_URL}/api/request/status-counts?${params}`
+      console.log('📊 Fetching status counts:', url)
+      
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!res.ok) {
+        throw new Error(`Errore HTTP ${res.status}`)
+      }
+
+      const data = await res.json()
+      console.log('✅ Status counts received:', data.counts)
+      
+      setStatusCounts(data.counts)
+    } catch (err) {
+      console.error('❌ Errore caricamento contatori:', err)
+    } finally {
+      setIsLoadingCounts(false)
+    }
+  }
+
   const fetchData = async () => {
     const auth = localStorage.getItem('automud_auth')
     if (!auth) {
@@ -180,8 +165,18 @@ const Dashboard = () => {
         params.append('search', debouncedSearchTerm.trim())
       }
 
+      // 🆕 AGGIUNGI FILTRI STATI AI PARAMETRI
+      if (statusFilters.all) {
+        params.append('all', 'true')
+      } else {
+        if (statusFilters.dChiamare) params.append('dChiamare', 'true')
+        if (statusFilters.inCorso) params.append('inCorso', 'true') 
+        if (statusFilters.pratiRitiro) params.append('pratiRitiro', 'true')
+        if (statusFilters.esitoFinale) params.append('esitoFinale', 'true')
+      }
+
       const url = `${API_BASE_URL}/api/request?${params}`
-      console.log('🌐 Fetching:', url)
+      console.log('🌐 Fetching with filters:', url)
       
       const res = await fetch(url, {
         method: 'GET',
@@ -216,22 +211,31 @@ const Dashboard = () => {
     }
   }
 
-  // Fetch quando cambiano pagina o ricerca
+  // Fetch quando cambiano pagina, ricerca o filtri
   useEffect(() => {
     fetchData()
-  }, [page, debouncedSearchTerm])
+  }, [page, debouncedSearchTerm, statusFilters])
+
+  // Fetch contatori quando cambia la ricerca
+  useEffect(() => {
+    fetchStatusCounts()
+  }, [debouncedSearchTerm])
 
   const handleView = (req: AutoRequest) => {
     console.log('📖 Navigando a dettaglio richiesta:', req.Id)
-    // Aggiungi la pagina corrente come parametro URL
     navigate(`/request/${req.Id}?page=${page}`)
   }
 
-  // 🆕 FUNZIONE PER CONDIVISIONE - FIXED per mobile scroll
+  // 🆕 GESTIONE CAMBIO FILTRI
+  const handleFilterChange = (newFilters: StatusFilterState) => {
+    console.log('🎯 Cambio filtri:', newFilters)
+    setStatusFilters(newFilters)
+    setPage(1) // Reset pagina quando cambiano i filtri
+  }
+
   const handleShare = (req: AutoRequest) => {
     console.log('🔗 Apertura modal condivisione per:', req.Id)
     
-    // Creiamo un oggetto CompleteRequestDetail completo per il ShareModal
     const completeRequest: CompleteRequestDetail = {
       ...req,
       Management: undefined,  
@@ -243,27 +247,22 @@ const Dashboard = () => {
     setShareModalRequest(completeRequest)
     setIsShareModalOpen(true)
     
-    // 🔧 FIX: Gestione overflow come in RequestDetail
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         document.body.style.overflow = 'hidden'
-        // Non settiamo position fixed che può causare problemi
         document.documentElement.style.overflow = 'hidden'
       }
     }, 0)
   }
 
-  // 🔧 FIX: Funzione per chiudere modal con cleanup identico a RequestDetail
   const handleCloseShareModal = () => {
     setIsShareModalOpen(false)
     setShareModalRequest(null)
     
-    // Ripristina scroll esattamente come RequestDetail
     setTimeout(() => {
       if (typeof window !== 'undefined') {
         document.body.style.overflow = 'unset'
         document.documentElement.style.overflow = 'unset'
-        // Forza reflow
         document.body.offsetHeight
       }
     }, 100)
@@ -283,68 +282,133 @@ const Dashboard = () => {
     setSearchTerm('')
   }
 
+  const handleRefresh = () => {
+    setPage(1)
+    fetchData()
+    fetchStatusCounts()
+  }
+
+  // 🆕 CONTEGGIO FILTRI ATTIVI
+  const getActiveFiltersCount = () => {
+    if (statusFilters.all) return 0
+    return [statusFilters.dChiamare, statusFilters.inCorso, statusFilters.pratiRitiro, statusFilters.esitoFinale]
+      .filter(Boolean).length
+  }
+
+  const activeFiltersCount = getActiveFiltersCount()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dashboard-page" style={{
-      // Previeni interferenza CSS quando modal è aperto
       transform: isShareModalOpen ? 'translateZ(0)' : 'none',
       isolation: isShareModalOpen ? 'isolate' : 'auto'
     }}>
-      {/* 🔧 INLINE STYLES per prevenire zoom indesiderato */}
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          @media screen and (max-width: 768px) {
-            html {
-              -webkit-text-size-adjust: 100%;
-              -ms-text-size-adjust: 100%;
-            }
+      
+      {/* 🎯 HEADER CON LOGO AUTOMUD - DESKTOP E MOBILE */}
+      <header className="bg-slate-800/50 border-b border-slate-700/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6">
+          <div className="flex items-center justify-between h-16 sm:h-20">
             
-            body {
-              -webkit-touch-callout: none;
-              -webkit-user-select: none;
-              -khtml-user-select: none;
-              -moz-user-select: none;
-              -ms-user-select: none;
-              user-select: none;
-              -webkit-tap-highlight-color: transparent;
-            }
-            
-            /* Elementi interattivi mantengono la selezione */
-            input, textarea, button, [role="button"], a {
-              -webkit-user-select: auto !important;
-              -moz-user-select: auto !important;
-              -ms-user-select: auto !important;
-              user-select: auto !important;
-              -webkit-touch-callout: default !important;
-            }
-          }
-        `
-      }} />
+            {/* Spazio vuoto a sinistra per bilanciare il layout */}
+            <div className="hidden lg:flex items-center gap-3 flex-1">
+              {/* Vuoto intenzionalmente per centrare il logo */}
+            </div>
+
+            {/* Logo AUTOMUD - Centro */}
+            <div className="flex-1 flex justify-center lg:flex-none">
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Logo AutoMud - Identico al Login */}
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-6 sm:h-8 bg-orange-400 rounded-full"></div>
+                  <div className="w-1 h-6 sm:h-8 bg-orange-400 rounded-full"></div>
+                </div>
+                <span className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+                  AUTOMUD
+                </span>
+              </div>
+            </div>
+
+            {/* Actions Destra - Solo User Menu */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 justify-end">
+              
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden text-slate-300 hover:text-white hover:bg-slate-700/50 h-8 w-8 p-0"
+                title="Menu"
+              >
+                {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </Button>
+
+              {/* User Menu - Desktop e Mobile - PIÙ GRANDE */}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 gap-2 px-4 h-10 sm:h-12"
+                  title="Menu utente"
+                >
+                  <User className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <span className="hidden sm:inline text-sm font-medium">Admin</span>
+                </Button>
+
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+                    <div className="p-4 border-b border-slate-700">
+                      <div className="text-base font-semibold text-white">Amministratore</div>
+                      <div className="text-sm text-slate-400">Sistema AutoMud</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {statusCounts.dChiamare > 0 && `${statusCounts.dChiamare} richieste da gestire`}
+                      </div>
+                    </div>
+                    <div className="py-2">
+                      <button
+                        onClick={() => {
+                          setShowUserMenu(false);
+                          handleLogout();
+                        }}
+                        className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 flex items-center gap-3"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Disconnetti
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Click outside per chiudere user menu */}
+      {showUserMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowUserMenu(false)}
+        />
+      )}
       
       <div className="w-full px-3 sm:px-4 py-4 sm:py-6">
-        {/* Mobile Header */}
+        
+        {/* Mobile Header Content */}
         <div className="lg:hidden mb-4">
           <div className="flex items-center justify-between">
             <div className="select-none">
-              <h1 className="text-xl sm:text-2xl font-bold text-white">AutoMud</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
               <p className="text-sm text-slate-400">
-                {totalResults} richieste
+                {totalResults} richieste {activeFiltersCount > 0 && `(${activeFiltersCount} filtri)`}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-            >
-              {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-            </Button>
           </div>
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="mt-4 p-4 bg-slate-800/90 border border-slate-700 rounded-lg backdrop-blur-sm">
+            <div className="mt-4 p-4 bg-slate-800/90 border border-slate-700 rounded-lg backdrop-blur-sm space-y-4">
               {/* Search Mobile */}
-              <div className="mb-4">
+              <div>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input
@@ -366,6 +430,35 @@ const Dashboard = () => {
                 )}
               </div>
 
+              {/* Filtri Mobile Toggle */}
+              <Button
+                onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+                variant="outline"
+                className="w-full bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 touch-manipulation relative"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtri Stati
+                {activeFiltersCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Notifiche integrate nel menu mobile */}
+              <div className="flex items-center justify-between p-3 bg-slate-700/30 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-slate-300">Richieste da gestire</span>
+                </div>
+                {statusCounts.dChiamare > 0 ? (
+                  <div className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 font-medium">
+                    {statusCounts.dChiamare}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-400">Tutto aggiornato</div>
+                )}
+              </div>
+
               {/* Logout Mobile */}
               <Button
                 onClick={handleLogout}
@@ -377,51 +470,66 @@ const Dashboard = () => {
               </Button>
             </div>
           )}
+
+          {/* 🆕 FILTRI MOBILE - Pannello separato */}
+          {isMobileFiltersOpen && (
+            <div className="mt-4">
+              <StatusFilter
+                filters={statusFilters}
+                counts={statusCounts}
+                onFilterChange={handleFilterChange}
+                isLoading={isLoadingCounts}
+              />
+            </div>
+          )}
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden lg:flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <div className="select-none">
-            <h1 className="text-3xl font-bold text-white">Dashboard Richieste</h1>
-            <p className="text-slate-400">
-              {totalResults} risultati • pagina {page} / {totalPages}
-              {debouncedSearchTerm && <span className="text-orange-400"> • Ricerca: "{debouncedSearchTerm}"</span>}
-            </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-            {/* Search Desktop */}
-            <div className="flex gap-2 max-w-md w-full">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <Input
-                  placeholder="Cerca per: ID, targa, cliente, marca/modello..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
-                />
+        <div className="hidden lg:block">
+          <div className="flex flex-col gap-6 mb-6">
+            <div className="flex justify-between items-center">
+              <div className="select-none">
+                <h1 className="text-3xl font-bold text-white">Dashboard Richieste</h1>
+                <p className="text-slate-400">
+                  {totalResults} risultati • pagina {page} / {totalPages}
+                  {debouncedSearchTerm && <span className="text-orange-400"> • Ricerca: "{debouncedSearchTerm}"</span>}
+                  {activeFiltersCount > 0 && <span className="text-blue-400"> • {activeFiltersCount} filtri attivi</span>}
+                </p>
               </div>
-              {searchTerm && (
-                <Button
-                  onClick={clearSearch}
-                  variant="outline"
-                  size="icon"
-                  className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600"
-                >
-                  ×
-                </Button>
-              )}
+              
+              <div className="flex gap-4 items-center">
+                {/* Search Desktop */}
+                <div className="flex gap-2 max-w-md">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Cerca per: ID, targa, cliente, marca/modello..."
+                      value={searchTerm}
+                      onChange={(e) => handleSearchChange(e.target.value)}
+                      className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-orange-500 focus:ring-orange-500/20"
+                    />
+                  </div>
+                  {searchTerm && (
+                    <Button
+                      onClick={clearSearch}
+                      variant="outline"
+                      size="icon"
+                      className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600"
+                    >
+                      ×
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Logout Desktop */}
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="bg-red-600/20 border-red-500/50 text-red-400 hover:bg-red-600/30 hover:border-red-500 hover:text-red-300 transition-colors whitespace-nowrap"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
+            {/* 🆕 FILTRI DESKTOP */}
+            <StatusFilter
+              filters={statusFilters}
+              counts={statusCounts}
+              onFilterChange={handleFilterChange}
+              isLoading={isLoadingCounts}
+            />
           </div>
         </div>
 
@@ -448,7 +556,7 @@ const Dashboard = () => {
               ))}
             </div>
 
-            {/* Mobile Pagination - Simplified with touch optimization */}
+            {/* Mobile Pagination */}
             <div className="flex flex-col items-center gap-4 mt-8 lg:hidden">
               <div className="text-center select-none">
                 <p className="text-slate-400 text-sm">
@@ -458,17 +566,17 @@ const Dashboard = () => {
               
               <div className="flex items-center gap-2">
                 <Button
-                size="sm"
-                onClick={() => {
-                  const newPage = Math.max(page - 1, 1)
-                  setPage(newPage)
-                  setSearchParams({ page: newPage.toString() })
-                }}
-                disabled={page === 1}
-                className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
+                  size="sm"
+                  onClick={() => {
+                    const newPage = Math.max(page - 1, 1)
+                    setPage(newPage)
+                    setSearchParams({ page: newPage.toString() })
+                  }}
+                  disabled={page === 1}
+                  className="bg-slate-700 border border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
                 
                 <div className="flex items-center gap-2 px-3">
                   <Input
@@ -509,7 +617,6 @@ const Dashboard = () => {
 
             {/* Desktop Pagination - Full */}
             <div className="hidden lg:flex flex-col sm:flex-row justify-center items-center gap-4 mt-10">
-              {/* Navigation buttons */}
               <div className="flex items-center gap-2">
                 <Button
                   size="sm"
@@ -535,14 +642,13 @@ const Dashboard = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
                 
-                {/* Page numbers */}
+                {/* Page numbers logic stays the same */}
                 <div className="flex items-center gap-1">
                   {(() => {
                     const pages = [];
                     const start = Math.max(1, page - 2);
                     const end = Math.min(totalPages, page + 2);
                     
-                    // First page
                     if (start > 1) {
                       pages.push(
                         <Button
@@ -562,7 +668,6 @@ const Dashboard = () => {
                       }
                     }
                     
-                    // Middle pages
                     for (let i = start; i <= end; i++) {
                       pages.push(
                         <Button
@@ -583,7 +688,6 @@ const Dashboard = () => {
                       );
                     }
                     
-                    // Last page
                     if (end < totalPages) {
                       if (end < totalPages - 1) {
                         pages.push(<span key="dots2" className="text-slate-400 px-1 select-none">...</span>);
@@ -633,7 +737,6 @@ const Dashboard = () => {
                 </Button>
               </div>
 
-              {/* Direct page input */}
               <div className="flex items-center gap-2">
                 <span className="text-slate-300 text-sm select-none">Vai a pagina:</span>
                 <Input
@@ -677,22 +780,44 @@ const Dashboard = () => {
               Nessuna richiesta trovata
             </h3>
             <p className="text-slate-400 text-sm sm:text-base px-4 select-none">
-              {debouncedSearchTerm ? `Nessun risultato per "${debouncedSearchTerm}"` : 'Non ci sono richieste da visualizzare'}
+              {debouncedSearchTerm || activeFiltersCount > 0 
+                ? `Nessun risultato per i criteri selezionati` 
+                : 'Non ci sono richieste da visualizzare'
+              }
             </p>
-            {searchTerm && (
-              <Button
-                onClick={clearSearch}
-                variant="outline"
-                className="mt-4 bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-              >
-                Cancella ricerca
-              </Button>
+            {(searchTerm || activeFiltersCount > 0) && (
+              <div className="flex gap-2 justify-center mt-4">
+                {searchTerm && (
+                  <Button
+                    onClick={clearSearch}
+                    variant="outline"
+                    className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+                  >
+                    Cancella ricerca
+                  </Button>
+                )}
+                {activeFiltersCount > 0 && (
+                  <Button
+                    onClick={() => handleFilterChange({
+                      all: true,
+                      dChiamare: false,
+                      inCorso: false,
+                      pratiRitiro: false,
+                      esitoFinale: false
+                    })}
+                    variant="outline"
+                    className="bg-slate-700/50 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+                  >
+                    Reset filtri
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         )}
       </div>
 
-      {/* 🆕 SHAREMODAL - Con fix touch-action per single-finger scroll */}
+      {/* ShareModal */}
       {shareModalRequest && (
         <div style={{ 
           position: 'fixed', 
@@ -702,7 +827,6 @@ const Dashboard = () => {
           bottom: 0, 
           zIndex: 9999,
           isolation: 'isolate',
-          // Fix per single-finger scroll
           touchAction: 'auto',
           WebkitOverflowScrolling: 'touch'
         }}>
