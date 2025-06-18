@@ -742,7 +742,7 @@ export default function RequestDetail() {
               )}
             </div>
 
-            {/* 🔄 OFFERTE MOBILE (PRIMA - ERANO PRIMA DI GESTIONE) */}
+            {/* 🔄 OFFERTE MOBILE*/}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('offers')}
@@ -790,7 +790,7 @@ export default function RequestDetail() {
               )}
             </div>
 
-            {/* 🔄 GESTIONE ECONOMICA MOBILE (DOPO - ERA PRIMA DI OFFERTE) */}
+            {/* 🔄 GESTIONE ECONOMICA MOBILE*/}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg">
               <button
                 onClick={() => toggleSection('economic')}

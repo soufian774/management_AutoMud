@@ -255,7 +255,7 @@ export default function OffersEditor({
             </p>
           </div>
 
-          {/* Statistiche offerte - Mobile Responsive */}
+          {/* Statistiche offerte - Mobile Responsive - Solo se ci sono offerte */}
           {stats && (
             <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-3 sm:p-4">
               <h3 className="font-semibold text-green-400 mb-3 flex items-center gap-2 text-sm sm:text-base">
@@ -283,18 +283,20 @@ export default function OffersEditor({
             </div>
           )}
 
-          {/* Header con pulsante aggiungi - Mobile Responsive */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-            <h3 className="text-base sm:text-lg font-semibold text-white">Elenco Offerte</h3>
-            <Button
-              onClick={handleAddOffer}
-              disabled={isLoading || isFormOpen}
-              className="bg-green-500 hover:bg-green-600 text-white border-0 w-full sm:w-auto touch-manipulation"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Aggiungi Offerta
-            </Button>
-          </div>
+          {/* ✅ Header con pulsante aggiungi - SOLO se ci sono già offerte */}
+          {offers.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <h3 className="text-base sm:text-lg font-semibold text-white">Elenco Offerte</h3>
+              <Button
+                onClick={handleAddOffer}
+                disabled={isLoading || isFormOpen}
+                className="bg-green-500 hover:bg-green-600 text-white border-0 w-full sm:w-auto touch-manipulation"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Aggiungi Offerta
+              </Button>
+            </div>
+          )}
 
           {/* Form aggiunta/modifica offerta - Mobile Responsive */}
           {isFormOpen && (
@@ -373,7 +375,7 @@ export default function OffersEditor({
             </div>
           )}
 
-          {/* Lista offerte - Mobile Responsive */}
+          {/* ✅ Lista offerte - CON LOGICA CONDIZIONALE CORRETTA */}
           <div className="space-y-3">
             {offers.length > 0 ? (
               offers.map((offer) => (
@@ -439,6 +441,8 @@ export default function OffersEditor({
                 <p className="text-slate-400 mb-4 text-sm sm:text-base px-4">
                   Aggiungi la prima offerta per iniziare a gestire le proposte dei partner
                 </p>
+                
+                {/* ✅ PULSANTE "AGGIUNGI PRIMA OFFERTA" - Solo quando non ci sono offerte */}
                 <Button
                   onClick={handleAddOffer}
                   disabled={isLoading || isFormOpen}
