@@ -70,6 +70,7 @@ export default function RequestDetail() {
     vehicle: false,
     economic: false,
     offers: false,
+    management:false,
     notes: false
   })
   const [showAllStates, setShowAllStates] = useState(false)
@@ -451,18 +452,6 @@ export default function RequestDetail() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setIsStatusSelectorOpen(true)
-                      setIsMobileMenuOpen(false)
-                    }}
-                    className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
-                  >
-                    <Clock className="h-3 w-3 mr-1" />
-                    Stato
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
                       setIsShareModalOpen(true)
                       setIsMobileMenuOpen(false)
                     }}
@@ -521,22 +510,11 @@ export default function RequestDetail() {
                 <div className="flex items-center gap-4 mt-2">
                   <p className="text-slate-400">ID: {request.Id}</p>
                   {request.CurrentStatus && (
-                    <div className="flex items-center gap-2">
-                      <Badge 
-                        className={`font-medium ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}
-                      >
-                        {RequestStatusEnum[request.CurrentStatus.Status]}
-                      </Badge>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsStatusSelectorOpen(true)}
-                        className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
-                      >
-                        <Clock className="h-3 w-3 mr-1" />
-                        Cambia Stato
-                      </Button>
-                    </div>
+                    <Badge 
+                      className={`font-medium ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}
+                    >
+                      {RequestStatusEnum[request.CurrentStatus.Status]}
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -885,13 +863,33 @@ export default function RequestDetail() {
               >
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
-                  <span className="font-semibold">Note & Storico</span>
+                  <span className="font-semibold">Stato, Note & Storico</span>
                 </div>
                 {expandedSections.notes ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               
               {expandedSections.notes && (
                 <div className="p-4 pt-0 space-y-4">
+                  {/* Stato attuale e cambio stato */}
+                  <div className="bg-slate-700/50 p-3 rounded-lg mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-slate-400">Stato Attuale:</span>
+                      {request.CurrentStatus && (
+                        <Badge className={`font-medium text-xs ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}>
+                          {RequestStatusEnum[request.CurrentStatus.Status]}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => setIsStatusSelectorOpen(true)}
+                      className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 touch-manipulation"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Cambia Stato Richiesta
+                    </Button>
+                  </div>
                   {/* Note di Gestione */}
                   {request.Management && (
                     <div>
@@ -1232,8 +1230,32 @@ export default function RequestDetail() {
                 <div className="bg-slate-800/50 border border-slate-700 rounded-lg shadow-lg p-6">
                   <h2 className="text-xl font-semibold mb-4 text-white flex items-center">
                     <History className="h-5 w-5 mr-2" />
-                    Storico Stati ({request.StatusHistory.length})
+                    Stato & Storico ({request.StatusHistory.length})
                   </h2>
+
+                  {/* Stato attuale e cambio stato */}
+                  <div className="bg-slate-700/50 p-4 rounded-lg mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-slate-300">Stato Attuale:</span>
+                      {request.CurrentStatus && (
+                        <Badge className={`font-medium ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}>
+                          {RequestStatusEnum[request.CurrentStatus.Status]}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3">
+                      Ultimo aggiornamento: {request.CurrentStatus ? formatDate(request.CurrentStatus.ChangeDate) : 'N/A'}
+                    </p>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={() => setIsStatusSelectorOpen(true)}
+                      className="w-full bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500"
+                    >
+                      <Clock className="h-4 w-4 mr-2" />
+                      Cambia Stato Richiesta
+                    </Button>
+                  </div>
                   
                   <div className="space-y-3">
                     {request.StatusHistory.length > 0 ? (
