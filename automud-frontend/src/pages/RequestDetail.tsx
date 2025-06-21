@@ -435,11 +435,17 @@ export default function RequestDetail() {
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <span className="text-slate-400 text-sm">ID: {request.Id}</span>
                 {request.CurrentStatus && (
-                  <Badge 
-                    className={`font-medium text-xs ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}
+                  <button
+                    onClick={() => setIsStatusSelectorOpen(true)}
+                    className="transition-all hover:scale-105 touch-manipulation"
+                    title="Clicca per cambiare stato"
                   >
-                    {RequestStatusEnum[request.CurrentStatus.Status]}
-                  </Badge>
+                    <Badge 
+                      className={`font-medium text-xs cursor-pointer ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))} hover:brightness-110 active:scale-95`}
+                    >
+                      {RequestStatusEnum[request.CurrentStatus.Status]}
+                    </Badge>
+                  </button>
                 )}
               </div>
             </div>
@@ -510,11 +516,17 @@ export default function RequestDetail() {
                 <div className="flex items-center gap-4 mt-2">
                   <p className="text-slate-400">ID: {request.Id}</p>
                   {request.CurrentStatus && (
-                    <Badge 
-                      className={`font-medium ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))}`}
+                    <button
+                      onClick={() => setIsStatusSelectorOpen(true)}
+                      className="transition-all hover:scale-105"
+                      title="Clicca per cambiare stato"
                     >
-                      {RequestStatusEnum[request.CurrentStatus.Status]}
-                    </Badge>
+                      <Badge 
+                        className={`font-medium cursor-pointer ${getBadgeStyles(getStatusColor(request.CurrentStatus.Status))} hover:brightness-110 hover:shadow-lg active:scale-95`}
+                      >
+                        {RequestStatusEnum[request.CurrentStatus.Status]}
+                      </Badge>
+                    </button>
                   )}
                 </div>
               </div>
