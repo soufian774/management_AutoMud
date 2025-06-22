@@ -13,11 +13,9 @@ export async function getStatusHistoryByRequestId(requestId: string): Promise<Re
       rs."Status", 
       rs."ChangeDate",
       rs."Notes",
-      rm."FinalOutcome",
-      rm."RequestCloseReason" as "CloseReason"
+      rs."FinalOutcome",        
+      rs."CloseReason"          
     FROM "RequestStatuses" rs
-    LEFT JOIN "RequestManagements" rm ON rs."RequestId" = rm."RequestId" 
-      AND rs."Status" = 40  -- Solo per stati "Esito finale"
     WHERE rs."RequestId" = $1
     ORDER BY rs."ChangeDate" ASC
   `;
@@ -26,22 +24,24 @@ export async function getStatusHistoryByRequestId(requestId: string): Promise<Re
   
   // 🎯 Se non ci sono stati, crea uno stato default "Da chiamare"
   if (result.rows.length === 0) {
-    // Ottieni la data/ora della richiesta per usarla come ChangeDate
     const requestQuery = `SELECT "DateTime" FROM "Requests" WHERE "Id" = $1`;
     const requestResult = await pool.query(requestQuery, [requestId]);
     
     const requestDateTime = requestResult.rows[0]?.DateTime || new Date().toISOString();
     
     return [{
-      Id: 0, // ID fittizio per il frontend
+      Id: 0,
       RequestId: requestId,
-      Status: 10, // "Da chiamare"
-      ChangeDate: requestDateTime, // Data/ora della richiesta originale
+      Status: 10,
+      ChangeDate: requestDateTime,
       Notes: undefined,
       FinalOutcome: undefined,
       CloseReason: undefined
     }];
   }
+  
+  // ✅ AGGIUNGI LOG PER VERIFICARE
+  console.log('📊 Status History Result:', result.rows);
   
   return result.rows;
 }
@@ -80,21 +80,31 @@ export async function getCurrentStatusByRequestId(requestId: string): Promise<Re
   return result.rows[0];
 }
 
+
 /**
- * Aggiunge un nuovo stato per una richiesta.
+ * Aggiunge un nuovo stato per una richiesta con supporto per FinalOutcome e CloseReason.
  * @param statusChange Dati del cambio stato
  */
 export async function addStatusChange(statusChange: StatusChangeRequest): Promise<RequestStatusRecord> {
   const query = `
-    INSERT INTO "RequestStatuses" ("RequestId", "Status", "ChangeDate", "Notes")
-    VALUES ($1, $2, NOW(), $3)
-    RETURNING "Id", "RequestId", "Status", "ChangeDate", "Notes"
+    INSERT INTO "RequestStatuses" (
+      "RequestId", 
+      "Status", 
+      "ChangeDate", 
+      "Notes", 
+      "FinalOutcome", 
+      "CloseReason"
+    )
+    VALUES ($1, $2, NOW(), $3, $4, $5)
+    RETURNING "Id", "RequestId", "Status", "ChangeDate", "Notes", "FinalOutcome", "CloseReason"
   `;
 
   const result = await pool.query(query, [
     statusChange.RequestId,
     statusChange.NewStatus,
-    statusChange.Notes || null
+    statusChange.Notes || null,
+    statusChange.FinalOutcome || null,  
+    statusChange.CloseReason || null 
   ]);
 
   return result.rows[0];
