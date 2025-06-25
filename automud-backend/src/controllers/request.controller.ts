@@ -15,7 +15,6 @@ import {
 } from '../services/request-status.service';
 import {
   getManagementByRequestId,
-  updateFinalOutcome,
   upsertManagement
 } from '../services/request-management.service';
 import {
@@ -168,9 +167,7 @@ export const getRequest: RequestHandler = async (req: Request, res: Response): P
         RegistrationCost: 0,
         TransportCost: 0,
         PurchasePrice: 0,
-        SalePrice: 0,
-        RequestCloseReason: 0,
-        FinalOutcome: undefined
+        SalePrice: 0
       };
     }
 
@@ -280,8 +277,7 @@ export const updateRequestNotes: RequestHandler = async (req: Request, res: Resp
         RegistrationCost: 0,
         TransportCost: 0,
         PurchasePrice: 0,
-        SalePrice: 0,
-        RequestCloseReason: 0
+        SalePrice: 0
       });
       res.status(201).json({
         success: true,
@@ -367,8 +363,7 @@ export const updateRequestPricing: RequestHandler = async (req: Request, res: Re
         PurchasePrice: purchasePrice || 0,
         SalePrice: salePrice || 0,
         RegistrationCost: registrationCost || 0,
-        TransportCost: transportCost || 0,
-        RequestCloseReason: 0
+        TransportCost: transportCost || 0
       });
       res.status(201).json({
         success: true,
@@ -448,8 +443,7 @@ export const updateRequestRange: RequestHandler = async (req: Request, res: Resp
         RegistrationCost: 0,
         TransportCost: 0,
         PurchasePrice: 0,
-        SalePrice: 0,
-        RequestCloseReason: 0
+        SalePrice: 0
       });
       res.status(201).json({
         success: true,
@@ -639,19 +633,6 @@ export const changeRequestStatus: RequestHandler = async (req: Request, res: Res
         ...statusChange,
         RequestId: requestId
       });
-
-      // Se è un esito finale con sotto-stati, aggiorna anche il management
-      if (statusChange.NewStatus === 40 && (statusChange.FinalOutcome || statusChange.CloseReason)) {
-        try {
-          await updateFinalOutcome(
-            requestId,
-            statusChange.FinalOutcome,
-            statusChange.CloseReason
-          );
-        } catch (mgmtError) {
-          console.warn(`⚠️ Could not update management outcome: ${mgmtError instanceof Error ? mgmtError.message : 'Unknown error'}`);
-        }
-      }
 
       console.log(`✅ Status changed successfully for request ${requestId}`);
       res.status(200).json({

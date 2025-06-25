@@ -15,9 +15,7 @@ export async function getManagementByRequestId(requestId: string): Promise<Reque
       COALESCE("RegistrationCost", 0) AS "RegistrationCost",
       COALESCE("TransportCost", 0) AS "TransportCost",
       COALESCE("PurchasePrice", 0) AS "PurchasePrice",
-      COALESCE("SalePrice", 0) AS "SalePrice",
-      COALESCE("RequestCloseReason", 0) AS "RequestCloseReason",
-      "FinalOutcome"
+      COALESCE("SalePrice", 0) AS "SalePrice"
     FROM "RequestManagements"
     WHERE "RequestId" = $1
   `;
@@ -34,9 +32,7 @@ export async function getManagementByRequestId(requestId: string): Promise<Reque
       RegistrationCost: 0,
       TransportCost: 0,
       PurchasePrice: 0,
-      SalePrice: 0,
-      RequestCloseReason: 0,
-      FinalOutcome: undefined
+      SalePrice: 0
     };
   }
   
@@ -51,10 +47,9 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
   const query = `
     INSERT INTO "RequestManagements" (
       "RequestId", "Notes", "RangeMin", "RangeMax", 
-      "RegistrationCost", "TransportCost", "PurchasePrice", 
-      "SalePrice", "RequestCloseReason", "FinalOutcome"
+      "RegistrationCost", "TransportCost", "PurchasePrice", "SalePrice"
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     ON CONFLICT ("RequestId") DO UPDATE SET
       "Notes" = EXCLUDED."Notes",
       "RangeMin" = EXCLUDED."RangeMin",
@@ -62,9 +57,7 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
       "RegistrationCost" = EXCLUDED."RegistrationCost",
       "TransportCost" = EXCLUDED."TransportCost",
       "PurchasePrice" = EXCLUDED."PurchasePrice",
-      "SalePrice" = EXCLUDED."SalePrice",
-      "RequestCloseReason" = EXCLUDED."RequestCloseReason",
-      "FinalOutcome" = EXCLUDED."FinalOutcome"
+      "SalePrice" = EXCLUDED."SalePrice"
     RETURNING *
   `;
 
@@ -76,40 +69,10 @@ export async function upsertManagement(management: RequestManagementRecord): Pro
     management.RegistrationCost,
     management.TransportCost,
     management.PurchasePrice,
-    management.SalePrice,
-    management.RequestCloseReason,
-    management.FinalOutcome || null
+    management.SalePrice
   ]);
 
   return result.rows[0];
-}
-
-/**
- * Aggiorna solo l'esito finale e il motivo di chiusura per una richiesta.
- * @param requestId ID della richiesta
- * @param finalOutcome Esito finale
- * @param closeReason Motivo di chiusura
- */
-export async function updateFinalOutcome(
-  requestId: string, 
-  finalOutcome?: number, 
-  closeReason?: number
-): Promise<RequestManagementRecord | null> {
-  // ✅ Ora aggiorniamo sia FinalOutcome che RequestCloseReason
-  const query = `
-    UPDATE "RequestManagements"
-    SET "FinalOutcome" = $2, "RequestCloseReason" = $3
-    WHERE "RequestId" = $1
-    RETURNING *
-  `;
-
-  const result = await pool.query(query, [
-    requestId,
-    finalOutcome || null,
-    closeReason || 0
-  ]);
-
-  return result.rows[0] || null;
 }
 
 /**
@@ -121,8 +84,7 @@ export async function getManagementForRequests(requestIds: string[]): Promise<Ma
 
   const query = `
     SELECT "RequestId", "Notes", "RangeMin", "RangeMax", 
-           "RegistrationCost", "TransportCost", "PurchasePrice", 
-           "SalePrice", "RequestCloseReason"
+           "RegistrationCost", "TransportCost", "PurchasePrice", "SalePrice"
     FROM "RequestManagements"
     WHERE "RequestId" = ANY($1)
   `;

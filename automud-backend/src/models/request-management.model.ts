@@ -6,7 +6,5 @@ export interface RequestManagementRecord {
   RegistrationCost: number;      // Costi di pratica/registrazione
   TransportCost: number;         // Costi di trasporto
   PurchasePrice: number;         // Prezzo di acquisto
-  SalePrice: number;             // Prezzo di vendita
-  RequestCloseReason: number;    // Motivo di chiusura (se applicabile)
-  FinalOutcome?: number;         // Esito Finale
+  SalePrice: number;             // Prezzo di vendita 
 }
